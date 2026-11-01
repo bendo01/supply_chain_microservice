@@ -1,0 +1,261 @@
+@startuml 03_er_diagram_global
+title ER Diagram Global (gabungan seluruh service, relasi lintas service berupa referensi ID logis)
+hide circle
+skinparam linetype ortho
+
+package "ms_01_gateaway" {
+  entity users {
+    * id : uuid <<PK>>
+    --
+    username : varchar
+    password_hash : varchar
+    role : enum
+    retail_id : uuid <<ref>>
+    warehouse_id : uuid <<ref>>
+    is_active : bool
+  }
+  entity refresh_tokens {
+    * id : uuid <<PK>>
+    --
+    user_id : uuid <<FK>>
+    token_hash : varchar
+    expires_at : timestamp
+  }
+  entity audit_logs {
+    * id : uuid <<PK>>
+    --
+    user_id : uuid <<FK>>
+    method, path, status
+    created_at : timestamp
+  }
+}
+
+package "ms_02_commodity" {
+  entity categories {
+    * id : uuid <<PK>>
+    --
+    name : varchar
+  }
+  entity commodities {
+    * id : uuid <<PK>>
+    --
+    sku : varchar <<UK>>
+    name : varchar
+    category_id : uuid <<FK>>
+    unit : varchar
+    cost_price : numeric
+    selling_price : numeric
+    is_active : bool
+  }
+  entity price_histories {
+    * id : uuid <<PK>>
+    --
+    commodity_id : uuid <<FK>>
+    cost_price, selling_price
+    effective_at : timestamp
+  }
+}
+
+package "ms_03_payment" {
+  entity payments {
+    * id : uuid <<PK>>
+    --
+    sale_id : uuid <<ref>>
+    retail_id : uuid <<ref>>
+    method : enum(CASH,QRIS)
+    amount : numeric
+    status : enum
+    paid_at : timestamp
+  }
+  entity cash_payments {
+    * payment_id : uuid <<PK,FK>>
+    --
+    received_amount : numeric
+    change_amount : numeric
+  }
+  entity qris_transactions {
+    * id : uuid <<PK>>
+    --
+    payment_id : uuid <<FK>>
+    qr_payload : text
+    provider_ref : varchar
+    expired_at : timestamp
+    status : enum
+  }
+}
+
+package "ms_04_retail" {
+  entity retails {
+    * id : uuid <<PK>>
+    --
+    code, name, address
+  }
+  entity retail_stocks {
+    * id : uuid <<PK>>
+    --
+    retail_id : uuid <<FK>>
+    commodity_id : uuid <<ref>>
+    quantity : int
+    min_stock : int
+  }
+  entity sales {
+    * id : uuid <<PK>>
+    --
+    retail_id : uuid <<FK>>
+    cashier_id : uuid <<ref>>
+    total : numeric
+    status : enum
+    created_at : timestamp
+  }
+  entity sale_items {
+    * id : uuid <<PK>>
+    --
+    sale_id : uuid <<FK>>
+    commodity_id : uuid <<ref>>
+    quantity : int
+    unit_price, unit_cost
+  }
+  entity restock_requests {
+    * id : uuid <<PK>>
+    --
+    retail_id : uuid <<FK>>
+    manager_id : uuid <<ref>>
+    status : enum
+    created_at : timestamp
+  }
+  entity restock_request_items {
+    * id : uuid <<PK>>
+    --
+    restock_request_id : uuid <<FK>>
+    commodity_id : uuid <<ref>>
+    quantity : int
+  }
+  entity sales_daily_summaries {
+    * id : uuid <<PK>>
+    --
+    retail_id, summary_date
+    revenue, cogs, profit, tx_count
+  }
+  entity item_sales_summaries {
+    * id : uuid <<PK>>
+    --
+    retail_id, commodity_id, summary_date
+    qty_sold, revenue, profit
+  }
+}
+
+package "ms_05_distribution" {
+  entity shipments {
+    * id : uuid <<PK>>
+    --
+    restock_request_id : uuid <<ref>>
+    warehouse_id, retail_id : uuid <<ref>>
+    courier : varchar
+    status : enum
+    shipped_at, delivered_at
+  }
+  entity shipment_items {
+    * id : uuid <<PK>>
+    --
+    shipment_id : uuid <<FK>>
+    commodity_id : uuid <<ref>>
+    quantity : int
+  }
+  entity shipment_trackings {
+    * id : uuid <<PK>>
+    --
+    shipment_id : uuid <<FK>>
+    status, note, created_at
+  }
+}
+
+package "ms_06_warehouse" {
+  entity warehouses {
+    * id : uuid <<PK>>
+    --
+    code, name, address
+  }
+  entity warehouse_stocks {
+    * id : uuid <<PK>>
+    --
+    warehouse_id : uuid <<FK>>
+    commodity_id : uuid <<ref>>
+    quantity, reserved, min_stock : int
+  }
+  entity stock_movements {
+    * id : uuid <<PK>>
+    --
+    warehouse_id : uuid <<FK>>
+    commodity_id : uuid <<ref>>
+    type : enum(IN,OUT,RESERVE,RELEASE)
+    quantity : int
+    reference_id : uuid
+    created_at
+  }
+  entity warehouse_restock_orders {
+    * id : uuid <<PK>>
+    --
+    warehouse_id : uuid <<FK>>
+    restock_request_id : uuid <<ref>>
+    status : enum
+  }
+}
+
+package "ms_07_supplyer" {
+  entity suppliers {
+    * id : uuid <<PK>>
+    --
+    code, name, contact, address
+  }
+  entity supplier_products {
+    * id : uuid <<PK>>
+    --
+    supplier_id : uuid <<FK>>
+    commodity_id : uuid <<ref>>
+    price : numeric
+    lead_time_days : int
+  }
+  entity purchase_orders {
+    * id : uuid <<PK>>
+    --
+    supplier_id : uuid <<FK>>
+    warehouse_id : uuid <<ref>>
+    status : enum
+    total : numeric
+  }
+  entity purchase_order_items {
+    * id : uuid <<PK>>
+    --
+    purchase_order_id : uuid <<FK>>
+    commodity_id : uuid <<ref>>
+    quantity : int
+    unit_price : numeric
+  }
+}
+
+users ||--o{ refresh_tokens
+users ||--o{ audit_logs
+categories ||--o{ commodities
+commodities ||--o{ price_histories
+payments ||--o| cash_payments
+payments ||--o{ qris_transactions
+retails ||--o{ retail_stocks
+retails ||--o{ sales
+sales ||--|{ sale_items
+retails ||--o{ restock_requests
+restock_requests ||--|{ restock_request_items
+shipments ||--|{ shipment_items
+shipments ||--o{ shipment_trackings
+warehouses ||--o{ warehouse_stocks
+warehouses ||--o{ stock_movements
+warehouses ||--o{ warehouse_restock_orders
+suppliers ||--o{ supplier_products
+suppliers ||--o{ purchase_orders
+purchase_orders ||--|{ purchase_order_items
+
+sales .. payments : sale_id (logis)
+restock_requests .. warehouse_restock_orders : (logis)
+restock_requests .. shipments : (logis)
+purchase_orders .. warehouse_stocks : barang diterima (event)
+commodities .. sale_items : commodity_id (logis)
+@enduml

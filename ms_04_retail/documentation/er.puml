@@ -1,0 +1,91 @@
+@startuml
+title ER - Retail
+hide circle
+entity retails {
+  * id : uuid <<PK>>
+  --
+  code : varchar <<UK>>
+  name : varchar
+  address : text
+  is_active : bool
+}
+entity retail_stocks {
+  * id : uuid <<PK>>
+  --
+  retail_id : uuid <<FK>>
+  commodity_id : uuid
+  quantity : int
+  reserved : int
+  min_stock : int
+  updated_at : timestamp
+}
+entity sales {
+  * id : uuid <<PK>>
+  --
+  retail_id : uuid <<FK>>
+  cashier_id : uuid
+  payment_id : uuid
+  payment_method : enum
+  total : numeric(14,2)
+  status : enum(PENDING,COMPLETED,CANCELLED)
+  created_at, completed_at : timestamp
+}
+entity sale_items {
+  * id : uuid <<PK>>
+  --
+  sale_id : uuid <<FK>>
+  commodity_id : uuid
+  quantity : int
+  unit_price : numeric(14,2)
+  unit_cost : numeric(14,2)
+}
+entity restock_requests {
+  * id : uuid <<PK>>
+  --
+  retail_id : uuid <<FK>>
+  manager_id : uuid
+  status : enum
+  note : text
+  created_at : timestamp
+}
+entity restock_request_items {
+  * id : uuid <<PK>>
+  --
+  restock_request_id : uuid <<FK>>
+  commodity_id : uuid
+  quantity : int
+}
+entity sales_daily_summaries {
+  * id : uuid <<PK>>
+  --
+  retail_id : uuid
+  summary_date : date
+  revenue : numeric
+  cogs : numeric
+  profit : numeric
+  tx_count : int
+}
+entity item_sales_summaries {
+  * id : uuid <<PK>>
+  --
+  retail_id : uuid
+  commodity_id : uuid
+  summary_date : date
+  qty_sold : int
+  revenue : numeric
+  profit : numeric
+}
+entity processed_events {
+  * event_id : uuid <<PK>>
+  --
+  topic : varchar
+  processed_at : timestamp
+}
+retails ||--o{ retail_stocks
+retails ||--o{ sales
+sales ||--|{ sale_items
+retails ||--o{ restock_requests
+restock_requests ||--|{ restock_request_items
+retails ||--o{ sales_daily_summaries
+retails ||--o{ item_sales_summaries
+@enduml

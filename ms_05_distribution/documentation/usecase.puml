@@ -1,0 +1,20 @@
+@startuml
+title Use Case - Distribution
+left to right direction
+actor "Manajer Warehouse" as WM
+actor Kurir
+actor "Manajer Retail" as RM
+rectangle Distribution {
+  usecase "Buat shipment (otomatis dari event)" as D1
+  usecase "Tetapkan kurir" as D2
+  usecase "Perbarui status pengiriman" as D3
+  usecase "Lihat tugas kurir" as D4
+  usecase "Lacak pengiriman" as D5
+}
+WM --> D2
+WM --> D5
+Kurir --> D3
+Kurir --> D4
+RM --> D5
+D1 ..> D2 : <<extend>>
+@enduml

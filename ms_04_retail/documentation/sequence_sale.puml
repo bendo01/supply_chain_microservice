@@ -1,0 +1,25 @@
+@startuml
+title Sequence - Pembuatan dan Penyelesaian Penjualan
+actor Kasir
+participant Retail as RET
+participant Commodity as COM
+participant Payment as PAY
+database db_retail as DB
+queue RabbitMQ as MQ
+
+Kasir -> RET : POST /sales {items, method}
+RET -> COM : GET /commodities?ids
+COM --> RET : price, cost
+RET -> DB : BEGIN; lock stok; reserve; INSERT sales PENDING + items; COMMIT
+RET -> PAY : POST /payments
+PAY --> RET : payment_id (+ qr_payload)
+RET --> Kasir : sale + payment info
+MQ -> RET : payment.paid
+RET -> DB : sale COMPLETED; stok dikurangi; outbox sale.completed
+RET -> MQ : sale.completed
+MQ -> RET : sale.completed (dashboard handler)
+RET -> DB : upsert ringkasan
+opt stok <= min_stock
+  RET -> MQ : retail.stock.low
+end
+@enduml

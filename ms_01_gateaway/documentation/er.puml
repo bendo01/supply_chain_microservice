@@ -1,0 +1,37 @@
+@startuml
+title ER - Gateway
+hide circle
+entity users {
+  * id : uuid <<PK>>
+  --
+  username : varchar <<UK>>
+  password_hash : varchar
+  full_name : varchar
+  role : enum
+  retail_id : uuid
+  warehouse_id : uuid
+  supplier_id : uuid
+  is_active : bool
+  created_at : timestamp
+}
+entity refresh_tokens {
+  * id : uuid <<PK>>
+  --
+  user_id : uuid <<FK>>
+  token_hash : varchar
+  expires_at : timestamp
+  revoked : bool
+}
+entity audit_logs {
+  * id : uuid <<PK>>
+  --
+  user_id : uuid <<FK>>
+  method : varchar
+  path : varchar
+  status_code : int
+  correlation_id : varchar
+  created_at : timestamp
+}
+users ||--o{ refresh_tokens
+users ||--o{ audit_logs
+@enduml

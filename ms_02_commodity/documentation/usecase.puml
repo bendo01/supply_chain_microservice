@@ -1,0 +1,21 @@
+@startuml
+title Use Case - Commodity
+left to right direction
+actor Owner
+actor "Service Lain (Retail/Warehouse/Supplier)" as S <<system>>
+actor "Pengguna Login" as U
+rectangle Commodity {
+  usecase "Kelola kategori" as C1
+  usecase "Kelola barang" as C2
+  usecase "Ubah harga" as C3
+  usecase "Lihat riwayat harga" as C4
+  usecase "Cari / lihat barang" as C5
+  usecase "Ambil data barang massal (ids)" as C6
+}
+Owner --> C1
+Owner --> C2
+Owner --> C4
+C2 <.. C3 : <<extend>>
+U --> C5
+S --> C6
+@enduml

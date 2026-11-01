@@ -1,0 +1,49 @@
+@startuml 09_activity_end_to_end
+title Activity Diagram - Alur End-to-End Supply Chain
+|Pembeli|
+start
+:Masuk retail & memilih barang;
+|Kasir|
+:Input barang di POS;
+if (Stok retail cukup?) then (ya)
+  |Pembeli|
+  if (Metode bayar?) then (Tunai)
+    :Serahkan uang tunai;
+    |Kasir|
+    :Hitung kembalian;
+  else (QRIS)
+    |Kasir|
+    :Tampilkan QR;
+    |Pembeli|
+    :Scan & bayar;
+  endif
+  |Kasir|
+  :Pembayaran PAID, cetak struk;
+  :Stok retail berkurang, ringkasan dashboard diperbarui;
+else (tidak)
+  :Tolak item / informasikan stok habis;
+endif
+|Manajer Retail|
+if (Stok <= minimum?) then (ya)
+  :Ajukan restock ke warehouse;
+  |Manajer Warehouse|
+  if (Stok warehouse cukup?) then (ya)
+    :Reserve stok & minta pengiriman;
+  else (tidak)
+    :Buat purchase order ke supplier;
+    |Supplier|
+    :Konfirmasi & kirim barang;
+    |Manajer Warehouse|
+    :Terima barang, stok bertambah;
+    :Minta pengiriman;
+  endif
+  |Distribusi|
+  :Buat shipment & kirim;
+  :Barang tiba (DELIVERED);
+  |Manajer Retail|
+  :Konfirmasi penerimaan, stok retail bertambah;
+endif
+|Pemilik|
+:Pantau dashboard penjualan, laba-rugi, analisis barang;
+stop
+@enduml

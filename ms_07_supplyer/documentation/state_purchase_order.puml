@@ -1,0 +1,10 @@
+@startuml
+title State - Purchase Order
+[*] --> CREATED
+CREATED --> CONFIRMED
+CREATED --> CANCELLED
+CONFIRMED --> SHIPPED
+SHIPPED --> DELIVERED
+DELIVERED --> [*]
+CANCELLED --> [*]
+@enduml

@@ -1,0 +1,33 @@
+@startuml
+title ER - Commodity
+hide circle
+entity categories {
+  * id : uuid <<PK>>
+  --
+  name : varchar <<UK>>
+  description : text
+}
+entity commodities {
+  * id : uuid <<PK>>
+  --
+  sku : varchar <<UK>>
+  name : varchar
+  category_id : uuid <<FK>>
+  unit : varchar
+  cost_price : numeric(14,2)
+  selling_price : numeric(14,2)
+  is_active : bool
+  created_at, updated_at : timestamp
+}
+entity price_histories {
+  * id : uuid <<PK>>
+  --
+  commodity_id : uuid <<FK>>
+  cost_price : numeric(14,2)
+  selling_price : numeric(14,2)
+  changed_by : uuid
+  effective_at : timestamp
+}
+categories ||--o{ commodities
+commodities ||--o{ price_histories
+@enduml

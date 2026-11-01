@@ -1,0 +1,20 @@
+@startuml
+title Sequence - Dashboard Retail
+actor Owner
+participant Gateway as GW
+participant Retail as RET
+database db_retail as DB
+participant Commodity as COM
+
+Owner -> GW : GET /dashboard/overview?from&to
+GW -> RET : forward (role OWNER)
+RET -> DB : SUM revenue,cogs,profit,tx_count dari sales_daily_summaries GROUP BY retail_id
+RET --> Owner : total + per retail
+
+Owner -> GW : GET /dashboard/items/analysis?retail_id
+GW -> RET : forward
+RET -> DB : agregasi item_sales_summaries (ORDER BY qty_sold)
+RET -> COM : GET /commodities?ids
+COM --> RET : nama, kategori
+RET --> Owner : top seller, slow moving, kontribusi laba
+@enduml

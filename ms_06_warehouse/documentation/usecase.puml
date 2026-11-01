@@ -1,0 +1,28 @@
+@startuml
+title Use Case - Warehouse
+left to right direction
+actor "Manajer Warehouse" as WM
+actor Owner
+actor "Retail (event)" as R <<system>>
+actor "Supplier (event)" as S <<system>>
+rectangle Warehouse {
+  usecase "Lihat & sesuaikan stok" as W1
+  usecase "Proses restock order" as W2
+  usecase "Reserve stok" as W3
+  usecase "Minta pengiriman" as W4
+  usecase "Pesan ke supplier" as W5
+  usecase "Terima barang (goods receipt)" as W6
+  usecase "Lihat riwayat pergerakan stok" as W7
+  usecase "Kelola master gudang" as W8
+}
+R --> W2
+W2 ..> W3 : <<include>>
+W2 ..> W4 : <<include>>
+W2 ..> W5 : <<extend>> [stok kurang]
+WM --> W1
+WM --> W5
+WM --> W6
+WM --> W7
+S --> W6
+Owner --> W8
+@enduml

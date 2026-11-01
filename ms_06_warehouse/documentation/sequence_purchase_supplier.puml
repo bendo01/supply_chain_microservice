@@ -1,0 +1,22 @@
+@startuml
+title Sequence - Pembelian ke Supplier dan Penerimaan Barang
+actor "Manajer Warehouse" as WM
+participant Warehouse as WH
+participant Supplier as SUP
+queue RabbitMQ as MQ
+database db_warehouse as DB
+
+WM -> WH : POST /purchase-requests {supplier_id, items}
+WH -> SUP : GET /supplier-products (harga, lead time)
+SUP --> WH : penawaran
+WH -> DB : INSERT purchase_requests REQUESTED
+WH -> MQ : po.requested
+MQ -> WH : po.confirmed / po.shipped
+MQ -> WH : po.delivered
+WM -> WH : POST /goods-receipts {po_id, items}
+WH -> DB : stok IN, received_qty, status RECEIVED
+WH -> WH : proses ulang order WAITING_SUPPLIER
+opt ada order terpenuhi
+  WH -> MQ : shipment.requested
+end
+@enduml

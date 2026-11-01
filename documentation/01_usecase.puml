@@ -1,0 +1,90 @@
+@startuml 01_usecase
+title Use Case Diagram - Supply Chain Microservice
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Pembeli" as Buyer
+actor "Kasir" as Cashier
+actor "Manajer Retail" as RetailMgr
+actor "Manajer Warehouse" as WhMgr
+actor "Admin Supplier" as SupplierAdm
+actor "Kurir / Distribusi" as Courier
+actor "Pemilik / Admin" as Owner
+actor "Provider QRIS (Simulasi)" as QRIS <<external>>
+
+rectangle "Retail" {
+  usecase "Memilih barang" as UC1
+  usecase "Memproses penjualan (POS)" as UC2
+  usecase "Membayar tunai" as UC3
+  usecase "Membayar QRIS" as UC4
+  usecase "Memantau stok retail" as UC5
+  usecase "Mengajukan permintaan restock" as UC6
+  usecase "Menerima barang distribusi" as UC7
+}
+
+rectangle "Payment" {
+  usecase "Membuat QR dinamis" as UC8
+  usecase "Konfirmasi pembayaran" as UC9
+}
+
+rectangle "Warehouse" {
+  usecase "Memproses permintaan restock" as UC10
+  usecase "Mengelola stok gudang" as UC11
+  usecase "Memesan barang ke supplier" as UC12
+  usecase "Menerima barang dari supplier" as UC13
+}
+
+rectangle "Distribution" {
+  usecase "Membuat pengiriman" as UC14
+  usecase "Memperbarui status pengiriman" as UC15
+}
+
+rectangle "Supplier" {
+  usecase "Mengelola purchase order" as UC16
+  usecase "Mengirim barang ke warehouse" as UC17
+}
+
+rectangle "Dashboard" {
+  usecase "Melihat penjualan per retail" as UC18
+  usecase "Melihat laba-rugi keseluruhan" as UC19
+  usecase "Melihat analisis barang terjual" as UC20
+}
+
+rectangle "Commodity & Gateway" {
+  usecase "Mengelola master barang & harga" as UC21
+  usecase "Login & otorisasi" as UC22
+}
+
+Buyer --> UC1
+Buyer --> UC3
+Buyer --> UC4
+Cashier --> UC2
+Cashier --> UC22
+UC2 ..> UC3 : <<include>> / pilih
+UC2 ..> UC4 : <<include>> / pilih
+UC4 ..> UC8 : <<include>>
+UC4 ..> UC9 : <<include>>
+QRIS --> UC9
+
+RetailMgr --> UC5
+RetailMgr --> UC6
+RetailMgr --> UC7
+RetailMgr --> UC18
+UC5 ..> UC6 : <<extend>>\n[stok habis]
+
+WhMgr --> UC10
+WhMgr --> UC11
+WhMgr --> UC12
+WhMgr --> UC13
+UC10 ..> UC14 : <<include>>
+UC10 ..> UC12 : <<extend>>\n[stok gudang habis]
+Courier --> UC15
+
+SupplierAdm --> UC16
+SupplierAdm --> UC17
+
+Owner --> UC18
+Owner --> UC19
+Owner --> UC20
+Owner --> UC21
+@enduml

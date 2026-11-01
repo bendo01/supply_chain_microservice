@@ -1,0 +1,36 @@
+@startuml 08_seq_dashboard
+title Sequence - Dashboard Penjualan, Laba-Rugi & Analisis Barang
+actor "Pemilik / Manajer" as U
+participant "Gateway" as GW
+participant "Retail (Dashboard)" as RET
+participant "Commodity" as COM
+queue "RabbitMQ" as MQ
+
+== Pembaruan read model (async) ==
+MQ -> RET : sale.completed
+RET -> RET : Upsert sales_daily_summaries\n(revenue, cogs, profit, tx_count)
+RET -> RET : Upsert item_sales_summaries\n(qty_sold, revenue, profit)
+
+== Permintaan dashboard ==
+U -> GW : GET /api/retail/dashboard/overview?from&to
+GW -> GW : Validasi role OWNER / RETAIL_MANAGER
+GW -> RET : forward
+alt role OWNER
+  RET -> RET : Agregasi seluruh retail
+else RETAIL_MANAGER
+  RET -> RET : Filter retail_id milik manajer
+end
+RET --> GW : penjualan, laba-rugi, perbandingan antar retail
+GW --> U : JSON overview
+
+U -> GW : GET /dashboard/retails/{id}/profit-loss
+GW -> RET : forward
+RET --> U : revenue, cogs, profit per periode
+
+U -> GW : GET /dashboard/items/analysis?retail_id&from&to
+GW -> RET : forward
+RET -> RET : Top seller, slow moving, kontribusi laba
+RET -> COM : GET /commodities?ids=... (nama & kategori)
+COM --> RET : metadata barang
+RET --> U : analisis barang terjual
+@enduml

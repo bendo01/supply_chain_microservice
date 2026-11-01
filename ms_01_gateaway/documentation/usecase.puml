@@ -1,0 +1,21 @@
+@startuml
+title Use Case - Gateway
+left to right direction
+actor "Semua Pengguna" as U
+actor Owner
+rectangle Gateway {
+  usecase "Login" as L
+  usecase "Refresh token" as R
+  usecase "Logout" as O
+  usecase "Routing request ke service" as RT
+  usecase "Kelola pengguna & peran" as M
+  usecase "Lihat audit log" as A
+}
+U --> L
+U --> R
+U --> O
+U --> RT
+Owner --> M
+Owner --> A
+RT ..> L : <<include>> (JWT valid)
+@enduml

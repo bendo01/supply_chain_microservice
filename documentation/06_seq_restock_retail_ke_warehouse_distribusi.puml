@@ -1,0 +1,43 @@
+@startuml 06_seq_restock_retail_ke_warehouse_distribusi
+title Sequence - Restock Retail dari Warehouse melalui Distribusi
+actor "Manajer Retail" as RM
+actor "Manajer Warehouse" as WM
+actor Kurir
+participant "Gateway" as GW
+participant "Retail" as RET
+participant "Warehouse" as WH
+participant "Distribution" as DIS
+participant "Supplier" as SUP
+queue "RabbitMQ" as MQ
+
+RET -> MQ : retail.stock.low
+RM -> GW : POST /api/retail/restock-requests (items)
+GW -> RET : forward
+RET -> RET : Simpan restock_request (REQUESTED)
+RET -> MQ : restock.requested
+MQ -> WH : restock.requested
+WH -> WH : Cek stok tersedia (qty - reserved)
+alt stok warehouse cukup
+  WH -> WH : Reserve stok, order APPROVED
+  WH -> MQ : shipment.requested
+  MQ -> DIS : shipment.requested
+  DIS -> DIS : Buat shipment (CREATED)
+  DIS -> MQ : shipment.created
+  MQ -> RET : shipment.created (status restock: IN_DELIVERY)
+  Kurir -> GW : PATCH /api/distribution/shipments/{id}/status (SHIPPED)
+  GW -> DIS : forward
+  DIS -> MQ : shipment.shipped
+  MQ -> WH : shipment.shipped
+  WH -> WH : Kurangi stok (OUT), lepas reservasi
+  Kurir -> GW : PATCH status DELIVERED
+  DIS -> MQ : shipment.delivered
+  MQ -> RET : shipment.delivered
+  RET -> RET : Tambah stok retail, restock RECEIVED
+  RM -> GW : POST /restock-requests/{id}/confirm
+else stok warehouse habis / kurang
+  WH -> MQ : warehouse.stock.insufficient
+  WH -> WH : order WAITING_SUPPLIER
+  WH -> SUP : (lihat 07_seq_pemesanan_warehouse_ke_supplier)
+  note right : Setelah barang dari supplier diterima,\nproses dilanjutkan ke shipment.requested
+end
+@enduml

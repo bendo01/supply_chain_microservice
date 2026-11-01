@@ -1,0 +1,20 @@
+@startuml
+title Sequence - Siklus Purchase Order
+participant Warehouse as WH
+queue RabbitMQ as MQ
+participant Supplier as SUP
+database db_supplier as DB
+actor "Admin Supplier" as SA
+
+WH -> MQ : po.requested
+MQ -> SUP : po.requested
+SUP -> DB : cek duplikat; ambil harga katalog; INSERT PO CREATED
+SA -> SUP : POST /purchase-orders/{id}/confirm
+SUP -> DB : CONFIRMED
+SUP -> MQ : po.confirmed
+SA -> SUP : PATCH /ship
+SUP -> MQ : po.shipped
+SA -> SUP : PATCH /deliver
+SUP -> MQ : po.delivered
+MQ -> WH : po.* (update status & siap goods receipt)
+@enduml

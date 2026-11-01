@@ -1,0 +1,41 @@
+@startuml 04_seq_pembelian_tunai
+title Sequence - Pembelian dengan Pembayaran Tunai
+actor Pembeli
+actor Kasir
+participant "Gateway" as GW
+participant "Retail" as RET
+participant "Commodity" as COM
+participant "Payment" as PAY
+queue "RabbitMQ" as MQ
+
+Pembeli -> Kasir : Membawa barang pilihan ke kasir
+Kasir -> GW : POST /api/retail/sales (items) + JWT
+GW -> GW : Validasi JWT & role KASIR
+GW -> RET : POST /sales
+RET -> COM : GET /commodities?ids=... (harga & HPP)
+COM --> RET : data barang
+RET -> RET : Cek stok retail
+alt stok mencukupi
+  RET -> RET : Simpan sale (PENDING) + reserve stok
+  RET -> PAY : POST /payments {method: CASH, amount}
+  PAY --> RET : payment (PENDING)
+  RET --> GW : sale + payment_id
+  GW --> Kasir : Total belanja
+  Pembeli -> Kasir : Menyerahkan uang tunai
+  Kasir -> GW : POST /payments/{id}/cash {received}
+  GW -> PAY : forward
+  PAY -> PAY : Hitung kembalian, status PAID
+  PAY -> MQ : publish payment.paid
+  PAY --> Kasir : kembalian
+  MQ -> RET : payment.paid
+  RET -> RET : Sale COMPLETED, kurangi stok, update ringkasan
+  RET -> MQ : publish sale.completed
+  opt stok <= min_stock
+    RET -> MQ : publish retail.stock.low
+  end
+  Kasir --> Pembeli : Struk + kembalian
+else stok tidak cukup
+  RET --> GW : 409 STOCK_INSUFFICIENT
+  GW --> Kasir : Pesan stok habis
+end
+@enduml

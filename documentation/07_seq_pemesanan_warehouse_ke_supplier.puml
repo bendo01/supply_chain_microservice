@@ -1,0 +1,36 @@
+@startuml 07_seq_pemesanan_warehouse_ke_supplier
+title Sequence - Pemesanan Warehouse ke Supplier
+actor "Manajer Warehouse" as WM
+actor "Admin Supplier" as SA
+participant "Gateway" as GW
+participant "Warehouse" as WH
+participant "Supplier" as SUP
+participant "Distribution" as DIS
+queue "RabbitMQ" as MQ
+
+MQ -> WH : warehouse.stock.insufficient (internal trigger)
+WM -> GW : POST /api/warehouse/purchase-requests {supplier_id, items}
+GW -> WH : forward
+WH -> SUP : GET /supplier-products?commodity_id (harga & lead time)
+SUP --> WH : daftar penawaran
+WH -> MQ : po.requested
+MQ -> SUP : po.requested
+SUP -> SUP : Buat purchase_order (CREATED)
+SA -> GW : POST /api/supplier/purchase-orders/{id}/confirm
+GW -> SUP : forward
+SUP -> SUP : status CONFIRMED
+SUP -> MQ : po.confirmed
+SA -> GW : PATCH /purchase-orders/{id}/ship
+SUP -> MQ : po.shipped
+MQ -> WH : po.shipped
+SA -> GW : PATCH /purchase-orders/{id}/deliver
+SUP -> MQ : po.delivered
+MQ -> WH : po.delivered
+WM -> GW : POST /goods-receipts {po_id, qty_diterima}
+WH -> WH : Tambah stok (IN), PO RECEIVED
+WH -> WH : Evaluasi restock order WAITING_SUPPLIER
+opt ada restock retail menunggu
+  WH -> MQ : shipment.requested
+  MQ -> DIS : shipment.requested
+end
+@enduml

@@ -1,0 +1,11 @@
+@startuml
+title State - Warehouse Restock Order
+[*] --> RECEIVED_REQUEST
+RECEIVED_REQUEST --> APPROVED : stok cukup (reserve)
+RECEIVED_REQUEST --> WAITING_SUPPLIER : stok kurang
+WAITING_SUPPLIER --> APPROVED : goods receipt
+RECEIVED_REQUEST --> REJECTED : ditolak manajer
+APPROVED --> SHIPPED : shipment.shipped
+SHIPPED --> [*]
+REJECTED --> [*]
+@enduml

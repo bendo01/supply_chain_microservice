@@ -1,0 +1,10 @@
+@startuml
+title State - Payment
+[*] --> PENDING
+PENDING --> PAID : tunai cukup / callback sukses
+PENDING --> EXPIRED : melewati expired_at
+PENDING --> FAILED : callback gagal
+PAID --> [*]
+EXPIRED --> [*]
+FAILED --> [*]
+@enduml

@@ -1,0 +1,27 @@
+@startuml
+title Use Case - Supplier
+left to right direction
+actor "Admin Supplier" as SA
+actor Owner
+actor "Manajer Warehouse" as WM
+rectangle Supplier {
+  usecase "Kelola supplier" as S1
+  usecase "Kelola katalog & harga" as S2
+  usecase "Lihat penawaran" as S3
+  usecase "Terima PO (otomatis dari event)" as S4
+  usecase "Konfirmasi PO" as S5
+  usecase "Kirim barang" as S6
+  usecase "Tandai tiba" as S7
+  usecase "Batalkan PO" as S8
+}
+Owner --> S1
+Owner --> S2
+SA --> S2
+SA --> S5
+SA --> S6
+SA --> S7
+SA --> S8
+WM --> S3
+WM --> S8
+S4 ..> S5 : <<extend>>
+@enduml

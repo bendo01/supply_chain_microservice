@@ -1,0 +1,23 @@
+@startuml
+title Sequence - Pemenuhan Restock di Warehouse
+participant Retail as RET
+queue RabbitMQ as MQ
+participant Warehouse as WH
+database db_warehouse as DB
+participant Distribution as DIS
+
+RET -> MQ : restock.requested
+MQ -> WH : restock.requested
+WH -> DB : lock stok; hitung tersedia
+alt cukup
+  WH -> DB : reserve, INSERT stock_movements RESERVE, order APPROVED
+  WH -> MQ : shipment.requested
+  MQ -> DIS : shipment.requested
+  DIS -> MQ : shipment.shipped
+  MQ -> WH : shipment.shipped
+  WH -> DB : OUT + RELEASE reservasi
+else kurang
+  WH -> DB : order WAITING_SUPPLIER
+  WH -> MQ : warehouse.stock.insufficient
+end
+@enduml

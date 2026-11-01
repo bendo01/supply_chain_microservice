@@ -1,0 +1,20 @@
+@startuml
+title Sequence - Pengiriman Warehouse ke Retail
+participant Warehouse as WH
+participant Distribution as DIS
+actor Kurir
+queue RabbitMQ as MQ
+participant Retail as RET
+
+WH -> MQ : shipment.requested
+MQ -> DIS : shipment.requested
+DIS -> DIS : INSERT shipment CREATED + tracking
+DIS -> MQ : shipment.created
+MQ -> RET : shipment.created
+Kurir -> DIS : PATCH status SHIPPED
+DIS -> MQ : shipment.shipped
+MQ -> WH : shipment.shipped (stok gudang dikurangi)
+Kurir -> DIS : PATCH status DELIVERED
+DIS -> MQ : shipment.delivered
+MQ -> RET : shipment.delivered (stok retail bertambah)
+@enduml

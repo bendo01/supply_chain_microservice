@@ -1,0 +1,71 @@
+@startuml
+title ER - Warehouse
+hide circle
+entity warehouses {
+  * id : uuid <<PK>>
+  --
+  code : varchar <<UK>>
+  name : varchar
+  address : text
+}
+entity warehouse_stocks {
+  * id : uuid <<PK>>
+  --
+  warehouse_id : uuid <<FK>>
+  commodity_id : uuid
+  quantity : int
+  reserved : int
+  min_stock : int
+}
+entity stock_movements {
+  * id : uuid <<PK>>
+  --
+  warehouse_id : uuid <<FK>>
+  commodity_id : uuid
+  type : enum(IN,OUT,RESERVE,RELEASE,ADJUST)
+  quantity : int
+  reference_type : varchar
+  reference_id : uuid
+  created_at : timestamp
+}
+entity warehouse_restock_orders {
+  * id : uuid <<PK>>
+  --
+  warehouse_id : uuid <<FK>>
+  restock_request_id : uuid <<UK>>
+  retail_id : uuid
+  status : enum
+  created_at : timestamp
+}
+entity warehouse_restock_order_items {
+  * id : uuid <<PK>>
+  --
+  order_id : uuid <<FK>>
+  commodity_id : uuid
+  quantity : int
+  reserved_qty : int
+}
+entity purchase_requests {
+  * id : uuid <<PK>>
+  --
+  warehouse_id : uuid <<FK>>
+  supplier_id : uuid
+  po_id : uuid
+  status : enum
+  created_at : timestamp
+}
+entity purchase_request_items {
+  * id : uuid <<PK>>
+  --
+  purchase_request_id : uuid <<FK>>
+  commodity_id : uuid
+  quantity : int
+  received_qty : int
+}
+warehouses ||--o{ warehouse_stocks
+warehouses ||--o{ stock_movements
+warehouses ||--o{ warehouse_restock_orders
+warehouse_restock_orders ||--|{ warehouse_restock_order_items
+warehouses ||--o{ purchase_requests
+purchase_requests ||--|{ purchase_request_items
+@enduml

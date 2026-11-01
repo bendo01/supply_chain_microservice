@@ -1,0 +1,40 @@
+@startuml
+title Use Case - Retail
+left to right direction
+actor Pembeli
+actor Kasir
+actor "Manajer Retail" as RM
+actor Owner
+rectangle Retail {
+  usecase "Memilih barang" as R1
+  usecase "Memproses penjualan" as R2
+  usecase "Pilih metode bayar (tunai/QRIS)" as R3
+  usecase "Batalkan penjualan" as R4
+  usecase "Lihat stok" as R5
+  usecase "Ajukan restock" as R6
+  usecase "Konfirmasi penerimaan barang" as R7
+  usecase "Dashboard penjualan" as R8
+  usecase "Dashboard laba-rugi" as R9
+  usecase "Analisis barang terjual" as R10
+  usecase "Bandingkan antar retail" as R11
+  usecase "Kelola master retail" as R12
+}
+Pembeli --> R1
+Pembeli --> R3
+Kasir --> R2
+Kasir --> R4
+Kasir --> R5
+R2 ..> R3 : <<include>>
+RM --> R5
+RM --> R6
+RM --> R7
+RM --> R8
+RM --> R9
+RM --> R10
+R5 ..> R6 : <<extend>> [stok habis]
+Owner --> R8
+Owner --> R9
+Owner --> R10
+Owner --> R11
+Owner --> R12
+@enduml

@@ -1,0 +1,9 @@
+@startuml
+title State - Shipment
+[*] --> CREATED
+CREATED --> SHIPPED : kurir berangkat
+SHIPPED --> DELIVERED : barang tiba
+SHIPPED --> FAILED : gagal kirim
+FAILED --> SHIPPED : kirim ulang
+DELIVERED --> [*]
+@enduml

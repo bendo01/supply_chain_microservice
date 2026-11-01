@@ -1,0 +1,27 @@
+@startuml
+title Use Case - Payment
+left to right direction
+actor Kasir
+actor Pembeli
+actor "Manajer Retail / Owner" as M
+actor "Provider QRIS (Mock)" as Q
+rectangle Payment {
+  usecase "Buat pembayaran" as P1
+  usecase "Terima tunai & hitung kembalian" as P2
+  usecase "Generate QR dinamis" as P3
+  usecase "Terima callback QRIS" as P4
+  usecase "Cek status pembayaran" as P5
+  usecase "Kedaluwarsakan QR" as P6
+  usecase "Lihat daftar pembayaran" as P7
+}
+Kasir --> P1
+Kasir --> P2
+Kasir --> P5
+Pembeli --> P2 : bayar tunai
+Pembeli --> Q : scan QR
+Q --> P4
+P1 ..> P3 : <<extend>> [method QRIS]
+P1 ..> P2 : <<extend>> [method CASH]
+P6 .. P3
+M --> P7
+@enduml

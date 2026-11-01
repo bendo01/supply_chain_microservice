@@ -1,0 +1,22 @@
+@startuml
+title Sequence - Login dan Routing Request
+actor Kasir
+participant Gateway as GW
+database db_gateway as DB
+participant "Service Tujuan" as SVC
+
+Kasir -> GW : POST /api/auth/login
+GW -> DB : cari user, verifikasi hash
+GW --> Kasir : access_token + refresh_token
+
+Kasir -> GW : GET /api/retail/... (Bearer token)
+GW -> GW : verifikasi JWT, cek peran vs rute
+alt diizinkan
+  GW -> SVC : forward + X-User-Id, X-Role, X-Retail-Id, X-Correlation-Id
+  SVC --> GW : response
+  GW -> DB : simpan audit_log
+  GW --> Kasir : response
+else ditolak
+  GW --> Kasir : 401 / 403
+end
+@enduml

@@ -1,0 +1,43 @@
+@startuml
+title ER - Supplier
+hide circle
+entity suppliers {
+  * id : uuid <<PK>>
+  --
+  code : varchar <<UK>>
+  name : varchar
+  contact : varchar
+  address : text
+  is_active : bool
+}
+entity supplier_products {
+  * id : uuid <<PK>>
+  --
+  supplier_id : uuid <<FK>>
+  commodity_id : uuid
+  price : numeric(14,2)
+  lead_time_days : int
+}
+entity purchase_orders {
+  * id : uuid <<PK>>
+  --
+  po_number : varchar <<UK>>
+  supplier_id : uuid <<FK>>
+  warehouse_id : uuid
+  purchase_request_id : uuid <<UK>>
+  status : enum
+  total : numeric(14,2)
+  created_at : timestamp
+}
+entity purchase_order_items {
+  * id : uuid <<PK>>
+  --
+  purchase_order_id : uuid <<FK>>
+  commodity_id : uuid
+  quantity : int
+  unit_price : numeric(14,2)
+}
+suppliers ||--o{ supplier_products
+suppliers ||--o{ purchase_orders
+purchase_orders ||--|{ purchase_order_items
+@enduml

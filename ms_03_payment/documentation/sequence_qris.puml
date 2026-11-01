@@ -1,0 +1,26 @@
+@startuml
+title Sequence - Pembayaran QRIS (Mock Provider)
+participant Retail as RET
+participant Payment as PAY
+participant "MockQRISProvider" as QR
+database db_payment as DB
+queue RabbitMQ as MQ
+actor Pembeli
+
+RET -> PAY : POST /payments {QRIS, amount}
+PAY -> QR : CreateQR(amount, ttl=5m)
+QR --> PAY : payload, provider_ref
+PAY -> DB : INSERT payments + qris_transactions
+PAY --> RET : qr_payload
+Pembeli -> QR : scan & bayar
+QR -> PAY : POST /qris/callback {provider_ref, status, signature}
+PAY -> PAY : verifikasi HMAC & cek sudah diproses?
+alt sukses & valid
+  PAY -> DB : status PAID + outbox
+  PAY -> MQ : payment.paid
+else gagal / expired
+  PAY -> DB : status FAILED/EXPIRED + outbox
+  PAY -> MQ : payment.failed
+end
+PAY --> QR : 200 OK
+@enduml

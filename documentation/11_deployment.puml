@@ -1,0 +1,49 @@
+@startuml 11_deployment
+title Deployment Diagram (Ferron Web Server + systemd)
+actor Client
+node "Server Aplikasi (Linux)" {
+  node "Ferron\n(TLS, rate limit, reverse proxy)\n:443" as fe
+  node "ms_01_gateaway :8080\n(systemd)" as gw
+  node "ms_02_commodity :8082\n(systemd)" as com
+  node "ms_03_payment :8083\n(systemd)" as pay
+  node "ms_04_retail :8084\n(systemd)" as ret
+  node "ms_05_distribution :8085\n(systemd)" as dis
+  node "ms_06_warehouse :8086\n(systemd)" as wh
+  node "ms_07_supplyer :8087\n(systemd)" as sup
+  node "RabbitMQ :5672\n(systemd)" as mq
+}
+node "Server Database (RDBMS)" {
+  database "db_gateway" as d1
+  database "db_commodity" as d2
+  database "db_payment" as d3
+  database "db_retail" as d4
+  database "db_distribution" as d5
+  database "db_warehouse" as d6
+  database "db_supplier" as d7
+}
+Client --> fe : HTTPS
+fe --> gw : proxy http://127.0.0.1:8080
+gw --> com
+gw --> pay
+gw --> ret
+gw --> dis
+gw --> wh
+gw --> sup
+gw --> d1
+com --> d2
+pay --> d3
+ret --> d4
+dis --> d5
+wh --> d6
+sup --> d7
+pay --> mq
+ret --> mq
+dis --> mq
+wh --> mq
+sup --> mq
+note bottom of fe
+  Hanya Ferron yang terbuka ke publik.
+  Service lain hanya mendengarkan di
+  127.0.0.1 / jaringan privat.
+end note
+@enduml

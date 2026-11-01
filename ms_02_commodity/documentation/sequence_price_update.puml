@@ -1,0 +1,20 @@
+@startuml
+title Sequence - Ubah Harga Barang dan Pembacaan oleh Retail
+actor Owner
+participant Gateway as GW
+participant Commodity as COM
+database db_commodity as DB
+participant Retail as RET
+
+Owner -> GW : PUT /api/commodity/commodities/{id} {selling_price}
+GW -> COM : forward (role OWNER)
+COM -> DB : BEGIN
+COM -> DB : UPDATE commodities
+COM -> DB : INSERT price_histories
+COM -> DB : COMMIT
+COM --> Owner : 200 barang terbaru
+
+RET -> COM : GET /commodities?ids=a,b
+COM -> DB : SELECT
+COM --> RET : harga & HPP terbaru
+@enduml

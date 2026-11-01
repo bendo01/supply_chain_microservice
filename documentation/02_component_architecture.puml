@@ -1,0 +1,56 @@
+@startuml 02_component_architecture
+title Arsitektur Komponen - Supply Chain Microservice
+skinparam componentStyle rectangle
+
+actor "Klien (POS / Web / Dashboard)" as Client
+component "Ferron Web Server\n(TLS, rate limit, reverse proxy)" as FE
+
+component "ms_01 Gateway\n(JWT, RBAC, Routing)" as GW
+component "ms_02 Commodity" as COM
+component "ms_03 Payment\n(Tunai + QRIS mock)" as PAY
+component "ms_04 Retail\n(POS, Stok, Dashboard)" as RET
+component "ms_05 Distribution" as DIS
+component "ms_06 Warehouse" as WH
+component "ms_07 Supplier" as SUP
+
+queue "RabbitMQ\n(exchange: supply.events)" as MQ
+
+database "db_gateway\n(RDBMS)" as DB1
+database "db_commodity" as DB2
+database "db_payment" as DB3
+database "db_retail" as DB4
+database "db_distribution" as DB5
+database "db_warehouse" as DB6
+database "db_supplier" as DB7
+
+Client --> FE : HTTPS
+FE --> GW : HTTP (reverse proxy)
+GW --> COM : REST
+GW --> PAY : REST
+GW --> RET : REST
+GW --> DIS : REST
+GW --> WH : REST
+GW --> SUP : REST
+
+RET --> COM : REST (harga & data barang)
+RET --> PAY : REST (buat pembayaran)
+
+GW --> DB1
+COM --> DB2
+PAY --> DB3
+RET --> DB4
+DIS --> DB5
+WH --> DB6
+SUP --> DB7
+
+PAY ..> MQ : payment.paid / failed
+RET ..> MQ : sale.completed, restock.requested
+WH ..> MQ : shipment.requested, po.requested
+DIS ..> MQ : shipment.created / delivered
+SUP ..> MQ : po.shipped / delivered
+MQ ..> RET : payment.*, shipment.delivered
+MQ ..> WH : restock.requested, po.delivered
+MQ ..> DIS : shipment.requested
+MQ ..> SUP : po.requested
+note bottom of MQ : Database per service,\ntidak ada akses lintas database.
+@enduml

@@ -1,0 +1,43 @@
+@startuml
+title ER - Payment
+hide circle
+entity payments {
+  * id : uuid <<PK>>
+  --
+  sale_id : uuid <<UK>>
+  retail_id : uuid
+  method : enum(CASH,QRIS)
+  amount : numeric(14,2)
+  status : enum(PENDING,PAID,FAILED,EXPIRED)
+  idempotency_key : varchar <<UK>>
+  paid_at : timestamp
+  created_at : timestamp
+}
+entity cash_payments {
+  * payment_id : uuid <<PK,FK>>
+  --
+  received_amount : numeric(14,2)
+  change_amount : numeric(14,2)
+  cashier_id : uuid
+}
+entity qris_transactions {
+  * id : uuid <<PK>>
+  --
+  payment_id : uuid <<FK>>
+  qr_payload : text
+  provider_ref : varchar <<UK>>
+  status : enum
+  expired_at : timestamp
+  callback_at : timestamp
+}
+entity outbox_events {
+  * id : uuid <<PK>>
+  --
+  topic : varchar
+  payload : json
+  published : bool
+  created_at : timestamp
+}
+payments ||--o| cash_payments
+payments ||--o{ qris_transactions
+@enduml

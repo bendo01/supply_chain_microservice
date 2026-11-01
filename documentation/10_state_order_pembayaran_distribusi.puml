@@ -1,0 +1,48 @@
+@startuml 10_state_order_pembayaran_distribusi
+title State Diagram - Sale, Payment, Restock, Shipment, Purchase Order
+
+state "Sale (Retail)" as SALE {
+  [*] --> PENDING
+  PENDING --> COMPLETED : payment.paid
+  PENDING --> CANCELLED : payment.failed / dibatalkan
+  COMPLETED --> [*]
+  CANCELLED --> [*]
+}
+
+state "Payment" as PAYM {
+  [*] --> P_PENDING
+  P_PENDING --> PAID : tunai diterima / callback QRIS sukses
+  P_PENDING --> EXPIRED : QR kedaluwarsa
+  P_PENDING --> FAILED : gagal
+  PAID --> [*]
+}
+
+state "Restock Request" as RR {
+  [*] --> REQUESTED
+  REQUESTED --> APPROVED : warehouse reserve stok
+  REQUESTED --> WAITING_SUPPLIER : stok gudang habis
+  WAITING_SUPPLIER --> APPROVED : barang supplier diterima
+  APPROVED --> IN_DELIVERY : shipment.created
+  IN_DELIVERY --> RECEIVED : shipment.delivered
+  REQUESTED --> REJECTED
+  RECEIVED --> [*]
+}
+
+state "Shipment" as SH {
+  [*] --> CREATED
+  CREATED --> SHIPPED
+  SHIPPED --> DELIVERED
+  SHIPPED --> FAILED
+  DELIVERED --> [*]
+}
+
+state "Purchase Order" as PO {
+  [*] --> PO_CREATED
+  PO_CREATED --> CONFIRMED
+  CONFIRMED --> PO_SHIPPED
+  PO_SHIPPED --> PO_DELIVERED
+  PO_DELIVERED --> PO_RECEIVED : goods receipt
+  PO_CREATED --> PO_CANCELLED
+  PO_RECEIVED --> [*]
+}
+@enduml

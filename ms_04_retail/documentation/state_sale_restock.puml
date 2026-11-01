@@ -1,0 +1,17 @@
+@startuml
+title State - Sale dan Restock Request
+state Sale {
+  [*] --> PENDING
+  PENDING --> COMPLETED : payment.paid
+  PENDING --> CANCELLED : payment.failed / cancel
+}
+state RestockRequest {
+  [*] --> REQUESTED
+  REQUESTED --> APPROVED
+  REQUESTED --> WAITING_SUPPLIER
+  WAITING_SUPPLIER --> APPROVED
+  APPROVED --> IN_DELIVERY
+  IN_DELIVERY --> RECEIVED
+  RECEIVED --> CLOSED : confirm
+}
+@enduml

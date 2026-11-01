@@ -1,0 +1,39 @@
+@startuml 12_seq_qris_tanpa_rabbitmq
+title Sequence Alternatif - Pembayaran QRIS tanpa RabbitMQ (Outbox + HTTP Push)
+participant "QRIS Mock Provider" as QR
+participant "Payment" as PAY
+database "db_payment" as PDB
+participant "Relay Worker\n(Payment)" as RL
+participant "Retail\n/internal/events" as RET
+database "db_retail" as RDB
+
+QR -> PAY : POST /payments/qris/callback (signature)
+PAY -> PAY : verifikasi signature & idempotensi
+PAY -> PDB : BEGIN\nUPDATE payments status PAID\nINSERT outbox_events (payment.paid, PENDING)\nCOMMIT
+PAY --> QR : 200 OK
+
+loop tiap 1-2 detik
+  RL -> PDB : SELECT outbox PENDING & next_attempt_at <= now
+end
+
+RL -> RET : POST /internal/events\nX-Event-Id, X-Signature (HMAC)
+alt Retail aktif & event baru
+  RET -> RDB : cek processed_events(event_id)
+  RET -> RDB : BEGIN\nsale COMPLETED, kurangi stok\nupdate ringkasan dashboard\nINSERT processed_events\nCOMMIT
+  RET --> RL : 200 OK
+  RL -> PDB : outbox status SENT
+else event sudah pernah diproses
+  RET --> RL : 200 OK (diabaikan)
+  RL -> PDB : outbox status SENT
+else Retail mati / 5xx
+  RET --> RL : gagal / timeout
+  RL -> PDB : attempts+1, next_attempt_at (backoff 1s, 5s, 30s, 2m, ...)
+  opt melewati batas percobaan
+    RL -> PDB : status DEAD (tampil di endpoint admin)
+  end
+end
+
+== Pemulihan setelah Retail lama mati ==
+RET -> PAY : GET /internal/events?after=<cursor>
+PAY --> RET : event yang terlewat (berurutan)
+@enduml

@@ -1,0 +1,22 @@
+@startuml
+title Sequence - Restock Request di Retail
+actor "Manajer Retail" as RM
+participant Retail as RET
+participant Warehouse as WH
+participant Distribution as DIS
+queue RabbitMQ as MQ
+
+RM -> RET : POST /restock-requests {items}
+RET -> RET : simpan REQUESTED
+RET -> MQ : restock.requested
+MQ -> WH : restock.requested
+WH -> MQ : shipment.requested
+MQ -> DIS : shipment.requested
+DIS -> MQ : shipment.created
+MQ -> RET : shipment.created
+RET -> RET : status IN_DELIVERY
+DIS -> MQ : shipment.delivered
+MQ -> RET : shipment.delivered
+RET -> RET : stok bertambah, status RECEIVED
+RM -> RET : POST /restock-requests/{id}/confirm
+@enduml

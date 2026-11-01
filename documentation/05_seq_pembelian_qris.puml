@@ -1,0 +1,36 @@
+@startuml 05_seq_pembelian_qris
+title Sequence - Pembelian dengan Pembayaran QRIS (Simulasi)
+actor Pembeli
+actor Kasir
+participant "Gateway" as GW
+participant "Retail" as RET
+participant "Payment" as PAY
+participant "QRIS Mock Provider" as QR
+queue "RabbitMQ" as MQ
+
+Kasir -> GW : POST /api/retail/sales (items)
+GW -> RET : POST /sales
+RET -> RET : Validasi stok, simpan sale PENDING
+RET -> PAY : POST /payments {method: QRIS, amount}
+PAY -> QR : create QR (amount, expiry 5 menit)
+QR --> PAY : qr_payload, provider_ref
+PAY --> RET : payment PENDING + qr_payload
+RET --> Kasir : tampilkan QR
+Pembeli -> QR : Scan & bayar (simulasi)
+QR -> PAY : POST /payments/qris/callback (signature)
+PAY -> PAY : Verifikasi signature & idempotensi
+alt pembayaran berhasil
+  PAY -> PAY : status PAID
+  PAY -> MQ : publish payment.paid
+  MQ -> RET : payment.paid
+  RET -> RET : Sale COMPLETED, kurangi stok
+  RET -> MQ : publish sale.completed
+  Kasir -> GW : GET /payments/{id} (polling)
+  GW --> Kasir : PAID -> cetak struk
+else kedaluwarsa / gagal
+  PAY -> MQ : publish payment.failed
+  MQ -> RET : payment.failed
+  RET -> RET : Sale CANCELLED, lepas reservasi stok
+  RET --> Kasir : Pembayaran gagal
+end
+@enduml

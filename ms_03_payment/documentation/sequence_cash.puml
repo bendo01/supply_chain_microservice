@@ -1,0 +1,20 @@
+@startuml
+title Sequence - Pembayaran Tunai
+actor Kasir
+participant Retail as RET
+participant Payment as PAY
+database db_payment as DB
+queue RabbitMQ as MQ
+
+RET -> PAY : POST /payments {sale_id, CASH, amount}
+PAY -> DB : INSERT payments (PENDING)
+PAY --> RET : payment_id
+Kasir -> PAY : POST /payments/{id}/cash {received_amount}
+alt received >= amount
+  PAY -> DB : INSERT cash_payments, status PAID, outbox payment.paid
+  PAY -> MQ : publish payment.paid
+  PAY --> Kasir : change_amount
+else kurang
+  PAY --> Kasir : 422 UANG_KURANG
+end
+@enduml
