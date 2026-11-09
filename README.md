@@ -2,7 +2,7 @@
 
 Sistem rantai pasok berbasis microservice yang mencakup alur **pembeli → retail → warehouse → supplier**. Pembeli membayar di retail secara tunai atau QRIS (simulasi). Bila stok retail menipis, manajer retail meminta restock ke warehouse dan barang dikirim melalui distribusi. Bila stok warehouse habis, warehouse memesan ke supplier. Dashboard menampilkan penjualan, laba-rugi, dan analisis barang terjual untuk seluruh retail maupun per retail.
 
-> **Status**: repositori ini masih berisi **dokumentasi desain**; kode belum dibuat. Dokumen menjadi acuan untuk implementasi tiap service.
+> **Status**: Gateway (`ms_01_gateaway`, Laravel) sudah diimplementasikan; service lain masih berupa **dokumentasi desain**. Dokumen menjadi acuan untuk implementasi tiap service.
 
 ## Arsitektur singkat
 

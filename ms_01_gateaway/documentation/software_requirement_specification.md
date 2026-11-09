@@ -30,6 +30,8 @@ Tidak menerbitkan atau mengonsumsi event bisnis.
 [usecase.puml](usecase.puml) · [er.puml](er.puml) · [sequence_auth_routing.puml](sequence_auth_routing.puml)
 
 ## 7. Cara Pembuatan
+> Implementasi: Laravel + spatie/laravel-permission + php-open-source-saver/jwt-auth, `declare(strict_types=1)` di semua berkas PHP. Lihat [../README.md](../README.md).
+
 1. Pilih bahasa/framework (bebas, mis. Go, Node.js, Java, Python, PHP, Rust) dan buat proyek `gateway` yang dijalankan sebagai service systemd di port 8080; siapkan database `db_gateway` pada RDBMS pilihan.
 2. Migrasi: `users`, `refresh_tokens`, `audit_logs`.
 3. Implementasi `auth` (hash bcrypt/argon2, penerbitan JWT HS256/RS256) dan CRUD user.
