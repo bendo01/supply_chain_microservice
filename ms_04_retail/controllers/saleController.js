@@ -1,71 +1,30 @@
 const saleService = require("../services/saleService");
 
 async function create(req, res) {
-    try {
-        const sale = await saleService.createSale(
-            req.body.items,
-            req.headers.authorization.slice(7)
-        );
+    const sale = await saleService.createSale(req.body.items, req.user, req.token);
+    res.status(201).json({ message: "Transaksi penjualan berhasil dibuat", data: sale });
+}
 
-        res.status(201).json({
-            message: "Transaksi penjualan berhasil dibuat",
-            data: sale
-        });
-
-    } catch (error) {
-        res.status(400).json({
-            message: "Gagal membuat transaksi",
-            error: error.message
-        });
-    }
+async function list(req, res) {
+    res.json({ data: await saleService.listSales(req.user, req.query) });
 }
 
 async function getById(req, res) {
-    try {
-        const sale = await saleService.getSaleById(req.params.id);
-
-        if (!sale) {
-            return res.status(404).json({
-                message: "Transaksi tidak ditemukan"
-            });
-        }
-
-        res.json({ data: sale });
-
-    } catch (error) {
-        res.status(500).json({
-            message: error.message
-        });
-    }
+    const sale = await saleService.getSaleById(req.params.id, req.user);
+    if (!sale) return res.status(404).json({ message: "Transaksi tidak ditemukan" });
+    res.json({ data: sale });
 }
 
 async function markPaid(req, res) {
-    try {
-        const sale = await saleService.markSalePaid(req.params.id);
-
-        if (!sale) {
-            return res.status(400).json({
-                message: "Transaksi tidak ditemukan atau bukan PENDING"
-            });
-        }
-
-        res.json({
-            message: "Transaksi berhasil diselesaikan",
-            data: sale
-        });
-
-    } catch (error) {
-        console.error("ERROR CREATE SALE:", error);
-
-        res.status(400).json({
-            message: "Gagal membuat transaksi",
-            error: error.message
-        });
-    }
+    const sale = await saleService.markSalePaid(req.params.id, req.user);
+    if (!sale) return res.status(404).json({ message: "Transaksi tidak ditemukan" });
+    res.json({ message: "Transaksi berhasil diselesaikan", data: sale });
 }
 
-module.exports = {
-    create,
-    getById,
-    markPaid
-};
+async function cancel(req, res) {
+    const sale = await saleService.cancelSale(req.params.id, req.user);
+    if (!sale) return res.status(404).json({ message: "Transaksi tidak ditemukan" });
+    res.json({ message: "Transaksi dibatalkan", data: sale });
+}
+
+module.exports = { create, list, getById, markPaid, cancel };
