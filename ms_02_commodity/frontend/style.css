@@ -1,0 +1,1225 @@
+
+/* =====================================================
+   BELI-BELI POS - FINAL DESIGN
+   Modern Minimarket Dashboard
+   Warna: Merah, Putih, Biru, Oranye, Hijau
+   ===================================================== */
+
+:root {
+    --primary: #D71920;
+    --primary-dark: #A91220;
+    --primary-light: #FFF0F1;
+
+    --blue: #1565C0;
+    --blue-light: #EAF2FF;
+
+    --orange: #FF9800;
+    --orange-light: #FFF5E5;
+
+    --success: #16834A;
+    --success-light: #E8F8EF;
+
+    --danger: #DC3545;
+    --warning: #E68A00;
+
+    --background: #F3F4F6;
+    --surface: #FFFFFF;
+
+    --text: #202938;
+    --muted: #7A8798;
+    --border: #E5E9EF;
+
+    --radius: 15px;
+    --shadow: 0 5px 22px rgba(25, 38, 58, .06);
+}
+
+/* ===== RESET DAN GLOBAL ===== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    min-height: 100vh;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: var(--background);
+    color: var(--text);
+    line-height: 1.5;
+}
+
+button {
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 700;
+    transition: .2s ease;
+}
+
+button:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+    transform: none;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+    outline: 3px solid rgba(215, 25, 32, .2);
+    outline-offset: 2px;
+}
+
+input, select {
+    font-family: inherit;
+}
+
+/* ===== SIDEBAR ===== */
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+
+    display: flex;
+    flex-direction: column;
+
+    width: 260px;
+    height: 100vh;
+    padding: 25px 18px;
+
+    background: linear-gradient(
+        180deg,
+        #C91622 0%,
+        #A91220 55%,
+        #850D19 100%
+    );
+
+    color: white;
+    box-shadow: 5px 0 25px rgba(120, 0, 0, .15);
+}
+
+/* Logo dan nama toko */
+
+.sidebar .brand {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    margin: 0 4px 35px;
+}
+
+.brand-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+
+    margin: 0;
+    border-radius: 15px;
+
+    background: linear-gradient(135deg, #FFFFFF, #FFE0E0);
+    color: var(--primary);
+
+    font-size: 27px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .15);
+}
+
+.sidebar h2 {
+    color: white;
+    font-size: 19px;
+    font-weight: 850;
+    letter-spacing: .3px;
+    line-height: 1.2;
+}
+
+.sidebar .brand span {
+    display: block;
+    margin-top: 5px;
+    color: #FFD6D8;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+}
+
+/* Navigasi */
+
+.sidebar nav {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 7px;
+    overflow-y: auto;
+}
+
+.sidebar nav a {
+    display: flex;
+    align-items: center;
+
+    padding: 13px 15px;
+    margin: 0;
+
+    border-radius: 11px;
+    border-left: 3px solid transparent;
+
+    color: #FFE5E6;
+    text-decoration: none;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    transition: .2s ease;
+}
+
+.sidebar nav a::before {
+    content: "●";
+    margin-right: 12px;
+    color: #F9A5A9;
+    font-size: 9px;
+}
+
+.sidebar nav a:hover {
+    color: white;
+    background: rgba(255, 255, 255, .13);
+    padding-left: 19px;
+}
+
+.sidebar nav a.active {
+    color: var(--primary);
+    background: white;
+    border-left-color: #FF9800;
+    box-shadow: 0 5px 15px rgba(70, 0, 0, .13);
+}
+
+.sidebar nav a.active::before {
+    color: var(--primary);
+}
+
+.sidebar nav a[hidden] {
+    display: none;
+}
+
+/* Tombol logout */
+
+.btn-logout {
+    width: 100%;
+    margin-top: 15px;
+    padding: 12px 15px;
+
+    color: white;
+    background: rgba(255, 255, 255, .12);
+    border: 1px solid rgba(255, 255, 255, .2);
+    border-radius: 10px;
+
+    text-align: left;
+}
+
+.btn-logout:hover {
+    background: white;
+    color: var(--primary);
+}
+
+/* ===== MAIN CONTENT ===== */
+
+.main-content {
+    min-height: 100vh;
+    margin-left: 260px;
+    padding: 30px 35px;
+}
+
+/* Header */
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+
+    padding-bottom: 22px;
+    margin-bottom: 25px;
+
+    border-bottom: 1px solid var(--border);
+}
+
+header h1 {
+    margin-bottom: 5px;
+    color: var(--text);
+    font-size: 27px;
+    font-weight: 800;
+    letter-spacing: -.5px;
+}
+
+header p {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.admin {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 11px 16px;
+
+    border: 1px solid var(--border);
+    border-radius: 12px;
+
+    background: white;
+    box-shadow: var(--shadow);
+    font-size: 13px;
+}
+
+.role-badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+
+    background: var(--primary-light);
+    color: var(--primary) !important;
+
+    font-size: 10px !important;
+    font-weight: 800;
+}
+
+/* ===== DASHBOARD ===== */
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+    margin-bottom: 25px;
+}
+
+.card, .panel {
+    padding: 23px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: white;
+    box-shadow: var(--shadow);
+}
+
+.card {
+    position: relative;
+    min-height: 135px;
+    overflow: hidden;
+    transition: .25s ease;
+}
+
+.card::after {
+    content: "";
+    position: absolute;
+    top: -25px;
+    right: -20px;
+
+    width: 95px;
+    height: 95px;
+
+    border-radius: 50%;
+    background: var(--primary-light);
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 28px rgba(25, 38, 58, .1);
+}
+
+.card h3 {
+    position: relative;
+    z-index: 1;
+
+    margin-bottom: 15px;
+
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.card h2 {
+    position: relative;
+    z-index: 1;
+
+    color: var(--text);
+    font-size: 27px;
+    font-weight: 850;
+}
+
+.panel {
+    margin-bottom: 23px;
+}
+
+.panel h2 {
+    margin-bottom: 10px;
+    color: var(--text);
+    font-size: 19px;
+    font-weight: 800;
+}
+
+.panel p {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+/* Halaman */
+
+.page {
+    display: none;
+}
+
+.page.active-page {
+    display: block;
+}
+
+/* ===== JUDUL BAGIAN DAN TOOLBAR ===== */
+
+.section-head,
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 22px;
+}
+
+.section-head h2,
+.toolbar h2 {
+    margin-bottom: 5px;
+    font-size: 20px;
+    font-weight: 800;
+}
+
+.section-head p,
+.toolbar p {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.section-head button {
+    margin-top: 0;
+    white-space: nowrap;
+}
+
+/* ===== BUTTON ===== */
+
+button {
+    min-height: 40px;
+    padding: 10px 17px;
+
+    border-radius: 9px;
+    background: var(--primary);
+    color: white;
+
+    font-size: 12px;
+    box-shadow: 0 4px 10px rgba(215, 25, 32, .13);
+}
+
+button:hover {
+    background: var(--primary-dark);
+    box-shadow: 0 6px 15px rgba(215, 25, 32, .2);
+    transform: translateY(-2px);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+.btn-reset {
+    background: #EDF0F5;
+    color: #526074;
+    box-shadow: none;
+}
+
+.btn-reset:hover {
+    background: #DFE4EC;
+    color: #263244;
+    box-shadow: none;
+}
+
+.btn-danger {
+    background: #DC3545;
+    color: white;
+    box-shadow: none;
+}
+
+.btn-danger:hover {
+    background: #B91C2C;
+}
+
+.btn-sm {
+    min-height: 31px;
+    padding: 6px 11px;
+    margin: 0 4px 0 0;
+    border-radius: 7px;
+    font-size: 11px;
+}
+
+.btn-block {
+    width: 100%;
+}
+
+/* Tombol sekunder opsional */
+
+.btn-blue {
+    background: var(--blue);
+}
+
+.btn-blue:hover {
+    background: #0D47A1;
+}
+
+.btn-orange {
+    background: var(--orange);
+}
+
+.btn-orange:hover {
+    background: #E68900;
+}
+
+/* ===== FORM DAN FILTER ===== */
+
+.filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.filters input,
+.filters select,
+.inline-form input,
+.form-group input,
+.form-group select {
+    width: 100%;
+    min-height: 44px;
+    padding: 11px 13px;
+
+    border: 1px solid #DFE5EC;
+    border-radius: 9px;
+
+    background: #FAFBFD;
+    color: var(--text);
+
+    font-size: 13px;
+    outline: none;
+
+    transition: .2s ease;
+}
+
+.filters input {
+    flex: 1;
+    min-width: 200px;
+}
+
+.filters input:focus,
+.filters select:focus,
+.inline-form input:focus,
+.form-group input:focus,
+.form-group select:focus {
+    border-color: var(--primary);
+    background: white;
+    box-shadow: 0 0 0 4px rgba(215, 25, 32, .08);
+}
+
+/* Form barang */
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 18px;
+}
+
+.form-group label {
+    color: #475569;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 22px;
+}
+
+.form-actions button {
+    margin-top: 0;
+}
+
+#commodityForm {
+    max-width: 720px;
+    margin-top: 20px;
+}
+
+/* Form kategori */
+
+.inline-form {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.inline-form input {
+    flex: 1;
+    min-width: 150px;
+}
+
+.inline-form button {
+    margin-top: 0;
+}
+
+/* ===== TABEL ===== */
+
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+
+    border: 1px solid var(--border);
+    border-radius: 13px;
+
+    background: white;
+}
+
+table {
+    width: 100%;
+    min-width: 750px;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 14px 13px;
+    border-bottom: 1px solid #EDF0F4;
+    text-align: left;
+    font-size: 12px;
+}
+
+th {
+    background: #FFF1F2;
+    color: #A91220;
+
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+    white-space: nowrap;
+}
+
+td {
+    color: #465367;
+}
+
+tbody tr {
+    transition: background .2s ease;
+}
+
+tbody tr:hover {
+    background: #FFFAFA;
+}
+
+td.actions {
+    white-space: nowrap;
+}
+
+.owner-only[hidden] {
+    display: none;
+}
+
+/* ===== STATUS ===== */
+
+.status-active,
+.status-inactive {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.status-active {
+    color: var(--success);
+    background: var(--success-light);
+}
+
+.status-inactive {
+    color: #B42332;
+    background: #FFF0F1;
+}
+
+/* ===== PESAN NOTIFIKASI ===== */
+
+.message {
+    margin-bottom: 13px;
+    font-size: 12px;
+}
+
+.message:empty {
+    display: none;
+}
+
+.message.error,
+.message.success,
+.message.warning {
+    padding: 10px 13px;
+    border-radius: 9px;
+}
+
+.message.error {
+    color: #B42332;
+    background: #FFF0F1;
+}
+
+.message.success {
+    color: #137A45;
+    background: #E8F8EF;
+}
+
+.message.warning {
+    color: #9A5B00;
+    background: #FFF6DF;
+}
+
+/* ===== PAGINATION ===== */
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.pagination span {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.pagination button {
+    margin-top: 0;
+}
+
+/* ===== KATALOG BARANG ===== */
+
+.catalog-panel {
+    margin-bottom: 25px;
+}
+
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 18px;
+}
+
+.product-card {
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 15px;
+    background: white;
+    transition: .25s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 25px rgba(0, 0, 0, .08);
+}
+
+.product-img {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    background: #F1F3F6;
+}
+
+.product-img img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform .3s ease;
+}
+
+.product-card:hover .product-img img {
+    transform: scale(1.05);
+}
+
+.product-body {
+    padding: 15px;
+}
+
+.product-body h3 {
+    min-height: 38px;
+    margin: 9px 0 5px;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 750;
+}
+
+.badge-cat {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 20px;
+
+    background: var(--blue-light);
+    color: var(--blue);
+
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.product-sku {
+    margin-bottom: 8px;
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.product-price {
+    margin-top: 9px;
+    color: var(--primary);
+    font-size: 18px;
+    font-weight: 850;
+}
+
+.product-hpp {
+    margin-top: 3px;
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.product-status {
+    margin-top: 10px;
+}
+
+/* Gambar tabel */
+
+.thumb {
+    width: 50px;
+    height: 50px;
+    overflow: hidden;
+    border-radius: 9px;
+    background: #F1F3F6;
+}
+
+.thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.img-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 100%;
+    height: 100%;
+
+    background: #F1F3F6;
+    font-size: 30px;
+}
+
+.thumb .img-placeholder {
+    font-size: 21px;
+}
+
+/* ===== CHECKOUT DAN PEMBAYARAN ===== */
+
+.checkout-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+
+    padding: 22px;
+    margin: 22px 0;
+
+    border: 1px solid #FFE0E2;
+    border-radius: 14px;
+
+    background: linear-gradient(135deg, #FFF1F2, #FFFFFF);
+}
+
+.checkout-total h2 {
+    margin: 0;
+    color: var(--primary);
+    font-size: 24px;
+    font-weight: 850;
+}
+
+#paymentMethod {
+    cursor: pointer;
+}
+
+#cashGroup {
+    padding: 15px;
+    border-radius: 12px;
+    background: #FAFBFD;
+}
+
+#qrisResult {
+    margin-top: 25px;
+    padding: 25px;
+
+    border: 1px solid var(--border);
+    border-radius: 16px;
+
+    background: #FAFBFD;
+    text-align: center;
+}
+
+#qrisResult h3 {
+    margin-bottom: 10px;
+    color: var(--primary);
+}
+
+#qrisImage {
+    display: block;
+    width: 240px;
+    max-width: 100%;
+
+    margin: 20px auto;
+    padding: 12px;
+
+    border: 1px solid var(--border);
+    border-radius: 15px;
+
+    background: white;
+}
+
+#receiptPanel {
+    margin-top: 25px;
+    border: 1px solid #BCEBD0;
+    background: white;
+}
+
+#receiptPanel h2 {
+    color: var(--success);
+}
+
+#receiptContent {
+    font-size: 13px;
+    line-height: 1.9;
+}
+
+#receiptContent table {
+    margin: 15px 0;
+}
+
+#checkoutButton,
+#simulateQrisButton {
+    margin-top: 15px;
+}
+
+#checkoutButton:disabled,
+#simulateQrisButton:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+/* ===== MODAL ===== */
+
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    background: rgba(20, 29, 43, .65);
+    backdrop-filter: blur(5px);
+}
+
+.modal[hidden] {
+    display: none;
+}
+
+.modal-box {
+    width: 100%;
+    max-width: 650px;
+    max-height: 90vh;
+    overflow-y: auto;
+
+    padding: 28px;
+
+    border: 1px solid rgba(255,255,255,.5);
+    border-radius: 18px;
+
+    background: white;
+    box-shadow: 0 25px 70px rgba(0,0,0,.2);
+}
+
+.modal-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+
+    border-bottom: 1px solid var(--border);
+}
+
+.modal-head h2 {
+    margin: 0;
+    font-size: 19px;
+}
+
+.modal-close {
+    min-height: 32px;
+    padding: 4px 12px;
+    margin: 0;
+    font-size: 20px;
+}
+
+/* ===== LOGIN ===== */
+
+.login-body {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    padding: 20px;
+
+    background:
+        radial-gradient(circle at 10% 10%, rgba(255,255,255,.2), transparent 30%),
+        radial-gradient(circle at 90% 90%, rgba(255,180,180,.2), transparent 30%),
+        linear-gradient(135deg, #970F1B, #D71920, #FF6971);
+}
+
+.login-card {
+    width: 100%;
+    max-width: 430px;
+
+    padding: 40px 35px;
+
+    border: 1px solid rgba(255,255,255,.7);
+    border-radius: 22px;
+
+    background: white;
+    box-shadow: 0 25px 70px rgba(70,0,0,.25);
+
+    text-align: center;
+}
+
+.login-card .brand-logo {
+    width: 65px;
+    height: 65px;
+    margin: 0 auto 18px;
+    border-radius: 19px;
+    font-size: 32px;
+}
+
+.login-card h1 {
+    color: var(--text);
+    font-size: 27px;
+    font-weight: 850;
+}
+
+.login-sub {
+    margin: 10px 0 20px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.login-card form {
+    margin-top: 10px;
+    text-align: left;
+}
+
+.login-card .form-group {
+    text-align: left;
+}
+
+.login-card .form-group input {
+    width: 100%;
+}
+
+.login-card .btn-block {
+    width: 100%;
+    min-height: 48px;
+    margin-top: 24px;
+}
+
+.login-card .message {
+    margin-top: 14px;
+    text-align: center;
+}
+
+/* ===== ANIMASI ===== */
+
+.page > .panel {
+    animation: pageAppear .3s ease;
+}
+
+@keyframes pageAppear {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== RESPONSIVE TABLET ===== */
+
+@media (max-width: 1100px) {
+    .cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .main-content {
+        padding: 25px 22px;
+    }
+}
+
+/* ===== RESPONSIVE HP ===== */
+
+@media (max-width: 760px) {
+    .sidebar {
+        position: relative;
+        width: 100%;
+        height: auto;
+        padding: 17px;
+
+        border-radius: 0 0 15px 15px;
+    }
+
+    .sidebar .brand {
+        margin: 0 0 18px;
+    }
+
+    .sidebar nav {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+    }
+
+    .sidebar nav a {
+        padding: 10px;
+        font-size: 11px;
+    }
+
+    .sidebar nav a:hover {
+        padding-left: 12px;
+    }
+
+    .btn-logout {
+        margin-top: 12px;
+    }
+
+    .main-content {
+        margin-left: 0;
+        padding: 20px 15px;
+    }
+
+    header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    header h1 {
+        font-size: 23px;
+    }
+
+    .admin {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 11px;
+    }
+
+    .card {
+        min-height: 115px;
+        padding: 17px;
+    }
+
+    .card h3 {
+        font-size: 11px;
+    }
+
+    .card h2 {
+        font-size: 21px;
+    }
+
+    .panel {
+        padding: 17px;
+    }
+
+    .toolbar,
+    .section-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .section-head button {
+        width: 100%;
+    }
+
+    .filters {
+        flex-direction: column;
+    }
+
+    .filters input,
+    .filters select {
+        width: 100%;
+    }
+
+    .pagination {
+        flex-wrap: wrap;
+    }
+
+    .checkout-total {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+/* ===== RESPONSIVE HP KECIL ===== */
+
+@media (max-width: 390px) {
+    .cards {
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar nav {
+        grid-template-columns: 1fr;
+    }
+
+    .login-card {
+        padding: 28px 20px;
+    }
+}
+
+/* ===== AKSESIBILITAS ===== */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
+    }
+}
+
+
+

@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BELI BELI - TOKO SERBA NGGA ADA</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-logo">🅱️</div>
+            <div>
+                <h2>BeliBeli</h2>
+                <span>TOKO SERBA NGGA ADA</span>
+            </div>
+        </div>
+
+        <nav>
+            <a href="#" class="active"
+            data-owner-only
+            onclick="showPage('dashboard', this)">
+            Dashboard
+            </a>
+
+            <a href="#"
+            onclick="showPage('barang', this)">
+            Katalog & Cari Barang
+            </a>
+
+            <a href="#"
+            data-owner-only
+            onclick="showPage('tambahBarang', this)">
+            Tambah Barang
+            </a>
+
+            <a href="#"
+            data-owner-only
+            onclick="showPage('kategori', this)">
+            Kategori
+            </a>
+
+            
+
+            <a href="#"
+            onclick="showPage('pembayaran', this)">
+            Pembayaran
+            </a>
+
+            <a href="#"
+            data-owner-only
+            onclick="showPage('riwayatTransaksi', this)">
+                Riwayat Transaksi & Pembayaran
+            </a>
+
+            <a href="#"
+            data-owner-only
+            onclick="showPage('laporan', this)">
+            Laporan
+            </a>
+        </nav>
+
+        <button type="button" class="btn-logout" onclick="Auth.logout()">Keluar</button>
+    </aside>
+
+    <main class="main-content">
+        <header>
+            <div>
+                <h1 id="pageTitle">Dashboard</h1>
+                <p>Selamat datang di BeliBeli </p>
+            </div>
+            <div class="admin">
+                <strong id="userName">-</strong>
+                <span id="userRole" class="role-badge">-</span>
+            </div>
+        </header>
+
+        <!-- DASHBOARD -->
+        <section id="dashboard" class="page active-page">
+            
+            <div class="cards">
+                <div class="card">
+                    <h3>Total Barang</h3>
+                    <h2 id="totalBarang">0</h2>
+                </div>
+
+                <div class="card">
+                    <h3>Total Transaksi</h3>
+                    <h2 id="totalTransaksi">0</h2>
+                </div>
+
+                <div class="card">
+                    <h3>Total Pendapatan</h3>
+                    <h2 id="totalPendapatan">Rp0</h2>
+                </div>
+
+                <div class="card">
+                    <h3>Pembayaran Berhasil</h3>
+                    <h2 id="pembayaranBerhasil">0</h2>
+                </div>
+            </div>
+
+
+            <!-- KATALOG BARANG: kartu barang dengan gambar, harga, dan kategori -->
+            <div class="panel catalog-panel">
+                <div class="section-head">
+                    <div>
+                        <h2>Katalog Barang</h2>
+                        <p>Barang terbaru beserta gambar, harga, dan kategorinya.</p>
+                    </div>
+                    <button type="button" onclick="document.querySelector('.sidebar nav a[onclick*=barang]').click()">Lihat Semua Barang</button>
+                </div>
+
+                <p id="dashboardMessage" class="message">Memuat barang...</p>
+                <div id="productGrid" class="product-grid"></div>
+            </div>
+
+            <div class="panel">
+                <h2>Selamat Datang!</h2>
+                <p>Gunakan menu di sebelah kiri untuk mengelola barang,
+                   transaksi, dan pembayaran.</p>
+            </div>
+        </section>
+
+        <!-- DATA BARANG: cari, filter kategori, paginasi -->
+        <section id="barang" class="page">
+            <div class="panel">
+                <div class="toolbar">
+                    <div>
+                        <h2>Data Barang</h2>
+                        <p>Cari berdasarkan nama, SKU, atau kategori.</p>
+                    </div>
+                    <button onclick="loadCommodities()">Refresh Data</button>
+                </div>
+
+                <div class="filters">
+                    <input type="search" id="searchInput" placeholder="Cari nama / SKU...">
+                    <select id="categoryFilter">
+                        <option value="">Semua kategori</option>
+                    </select>
+                </div>
+
+                <p id="commodityMessage" class="message">Memuat data barang...</p>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Gambar</th>
+                                <th>SKU</th>
+                                <th>Nama Barang</th>
+                                <th>Kategori</th>
+                                <th>Satuan</th>
+                                <th>Harga Pokok (HPP)</th>
+                                <th>Harga Jual</th>
+                                <th>Status</th>
+                                <th class="owner-only">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="commodityTable">
+                            <tr><td colspan="9">Memuat data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pagination">
+                    <button type="button" id="prevPage" class="btn-reset">&laquo; Sebelumnya</button>
+                    <span id="pageInfo">Halaman 1</span>
+                    <button type="button" id="nextPage" class="btn-reset">Berikutnya &raquo;</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAMBAH BARANG (OWNER) -->
+        <section id="tambahBarang" class="page">
+            <div class="panel">
+                <h2>Tambah Barang Baru</h2>
+                <p>Masukkan informasi barang yang ingin ditambahkan. SKU harus unik.</p>
+
+                <form id="commodityForm">
+                    <div class="form-group">
+                        <label for="sku">Kode SKU</label>
+                        <input type="text" id="sku" required placeholder="Contoh: BRG004">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="name">Nama Barang</label>
+                        <input type="text" id="name" required placeholder="Masukkan nama barang">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="category_id">Kategori</label>
+                        <select id="category_id" required>
+                            <option value="">Pilih kategori</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="unit">Satuan</label>
+                        <input type="text" id="unit" required placeholder="Contoh: kg, liter, pcs">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cost_price">Harga Pokok (HPP)</label>
+                        <input type="number" id="cost_price" min="0" step="0.01" required
+                            placeholder="Masukkan harga pokok">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="selling_price">Harga Jual</label>
+                        <input type="number" id="selling_price" min="0" step="0.01" required
+                            placeholder="Masukkan harga jual">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="image_url">Link Gambar (opsional)</label>
+                        <input type="url" id="image_url" placeholder="https://contoh.com/gambar-barang.jpg">
+                    </div>
+
+                    <p id="priceWarning" class="message warning"></p>
+
+                    <div class="form-actions">
+                        <button type="submit">Simpan Barang</button>
+                        <button type="reset" class="btn-reset">Reset</button>
+                    </div>
+
+                    <p id="formMessage" class="message"></p>
+                </form>
+            </div>
+        </section>
+
+        <!-- KATEGORI (OWNER) -->
+        <section id="kategori" class="page">
+            <div class="panel">
+                <h2>Kategori Barang</h2>
+                <p>Tambah, ubah, atau hapus kategori.</p>
+
+                <form id="categoryForm" class="inline-form">
+                    <input type="hidden" id="categoryId">
+                    <input type="text" id="categoryName" required placeholder="Nama kategori (unik)">
+                    <input type="text" id="categoryDesc" placeholder="Deskripsi (opsional)">
+                    <button type="submit" id="categorySubmit">Simpan</button>
+                    <button type="button" id="categoryCancel" class="btn-reset" hidden>Batal</button>
+                </form>
+
+                <p id="categoryMessage" class="message"></p>
+
+                <div class="table-container">
+                    <table style="min-width:500px">
+                        <thead>
+                            <tr><th>Nama</th><th>Deskripsi</th><th>Aksi</th></tr>
+                        </thead>
+                        <tbody id="categoryTable">
+                            <tr><td colspan="3">Memuat data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        
+
+       
+<section id="pembayaran" class="page">
+    <div id="cashActions" hidden>
+        <p>Silakan periksa uang yang diterima sebelum konfirmasi.</p>
+
+        <button type="button" onclick="confirmCashPayment()">
+            Konfirmasi Pembayaran Tunai
+        </button>
+
+        <button type="button" class="btn-reset"
+            onclick="failCurrentPayment()">
+            Tandai Pembayaran Gagal
+        </button>
+    </div>
+    <div class="panel">
+        <h2>Keranjang Belanja</h2>
+        <p>Periksa barang yang akan dibeli sebelum melakukan pembayaran.</p>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Barang</th>
+                        <th>Harga</th>
+                        <th>Jumlah</th>
+                        <th>Subtotal</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="cartTable">
+                    <tr>
+                        <td colspan="5">Keranjang masih kosong.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="checkout-total">
+            <h3>Total Belanja</h3>
+            <h2 id="cartTotal">Rp0</h2>
+        </div>
+
+        <button type="button" class="btn-reset"
+            onclick="clearCart()">
+            Kosongkan Keranjang
+        </button>
+    </div>
+
+    <div class="panel">
+        <h2>Metode Pembayaran</h2>
+        <p>Pilih metode pembayaran yang diinginkan.</p>
+
+        <div class="form-group">
+            <label for="paymentMethod">Metode Pembayaran</label>
+            <select id="paymentMethod">
+                <option value="CASH">CASH / Tunai</option>
+                <option value="QRIS">QRIS</option>
+            </select>
+        </div>
+
+        <div class="form-group" id="cashGroup">
+    <label for="cashReceived">Uang Diterima</label>
+    <input type="number" id="cashReceived"
+        min="0" placeholder="Masukkan jumlah uang">
+</div>
+
+<div id="cashActions" hidden>
+    <button type="button"
+        onclick="confirmCashPayment()">
+        Konfirmasi Pembayaran Tunai
+    </button>
+
+    <button type="button" class="btn-reset"
+        onclick="failCurrentPayment()">
+        Tandai Pembayaran Gagal
+    </button>
+</div>
+
+        <button type="button" id="checkoutButton"
+            onclick="processCheckout()">
+            Proses Pembayaran
+        </button>
+
+        <p id="paymentMessage" class="message"></p>
+
+        <div id="qrisResult" hidden>
+    <h3>Scan QRIS</h3>
+    <p>Silakan scan QR Code berikut.</p>
+
+    <img id="qrisImage" alt="QRIS"
+        style="width:250px;max-width:100%;">
+
+    <p id="qrisInfo"></p>
+
+    <h3 id="qrisCountdown">Sisa waktu: 05:00</h3>
+
+    <button type="button" id="simulateQrisButton"
+        onclick="simulatePayment()">
+        Simulasikan Pembayaran Berhasil
+    </button>
+
+    <button type="button" class="btn-reset"
+        onclick="failCurrentPayment()">
+        Batalkan / Pembayaran Gagal
+    </button>
+</div>
+    </div>
+
+    <div class="panel" id="receiptPanel" hidden>
+        <h2>Pembayaran Berhasil!</h2>
+        <p id="receiptContent"></p>
+
+        <button type="button" onclick="printReceipt()">
+            Cetak Struk
+        </button>
+
+        <button type="button" class="btn-reset"
+            onclick="newPurchase()">
+            Belanja Lagi
+        </button>
+    </div>
+
+</section>
+
+
+<!-- RIWAYAT TRANSAKSI DAN PEMBAYARAN (OWNER) -->
+<section id="riwayatTransaksi" class="page">
+
+    <div class="panel">
+        <div class="toolbar">
+            <div>
+                <h2>Riwayat Transaksi & Pembayaran</h2>
+                <p>Pantau seluruh transaksi penjualan beserta status pembayarannya.</p>
+            </div>
+
+            <button type="button" onclick="loadTransactionHistory()">
+                Refresh Data
+            </button>
+        </div>
+
+        <div class="cards">
+            <div class="card">
+                <h3>Total Transaksi</h3>
+                <h2 id="historyTransactionTotal">0</h2>
+            </div>
+
+            <div class="card">
+                <h3>Pembayaran Berhasil</h3>
+                <h2 id="historyPaid">0</h2>
+            </div>
+
+            <div class="card">
+                <h3>Total Pembayaran</h3>
+                <h2 id="historyTotal">Rp0</h2>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>No.</th>
+                        <th>ID Transaksi</th>
+                        <th>ID Pembayaran</th>
+                        <th>Tanggal</th>
+                        <th>Metode</th>
+                        <th>Total</th>
+                        <th>Status Pembayaran</th>
+                    </tr>
+                </thead>
+
+                <tbody id="transactionHistoryTable">
+                    <tr>
+                        <td colspan="7">Memuat data...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p id="transactionHistoryMessage" class="message"></p>
+    </div>
+
+</section>        
+
+
+        
+
+<!-- HALAMAN LAPORAN OWNER -->
+<section id="laporan" class="page">
+
+    <div class="panel">
+        <div class="toolbar">
+            <div>
+                <h2>Laporan Penjualan</h2>
+                <p>Ringkasan penjualan dan pembayaran BeliBeli.</p>
+            </div>
+
+            <button type="button" onclick="loadSalesReport()">
+                Refresh Laporan
+            </button>
+        </div>
+
+        <!-- FILTER TANGGAL -->
+        <div class="inline-form">
+            <div class="form-group">
+                <label for="reportStartDate">Dari Tanggal</label>
+                <input type="date" id="reportStartDate">
+            </div>
+
+            <div class="form-group">
+                <label for="reportEndDate">Sampai Tanggal</label>
+                <input type="date" id="reportEndDate">
+            </div>
+
+            <button type="button" onclick="loadSalesReport()">
+                Terapkan Filter
+            </button>
+
+            <button type="button" class="btn-reset"
+                onclick="resetSalesReport()">
+                Reset
+            </button>
+        </div>
+
+        <p id="reportMessage" class="message"></p>
+
+        <!-- RINGKASAN -->
+        <div class="cards">
+
+            <div class="card">
+                <h3>Total Pendapatan</h3>
+                <h2 id="reportIncome">Rp0</h2>
+            </div>
+
+            <div class="card">
+                <h3>Total Transaksi</h3>
+                <h2 id="reportTransactions">0</h2>
+            </div>
+
+            <div class="card">
+                <h3>Pembayaran Berhasil</h3>
+                <h2 id="reportPaid">0</h2>
+            </div>
+
+            <div class="card">
+                <h3>Pembayaran Pending</h3>
+                <h2 id="reportPending">0</h2>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- RINCIAN METODE PEMBAYARAN -->
+    <div class="panel">
+        <h2>Ringkasan Metode Pembayaran</h2>
+
+        <div class="cards">
+
+            <div class="card">
+                <h3>Cash / Tunai</h3>
+                <h2 id="reportCashIncome">Rp0</h2>
+                <p id="reportCashCount">0 transaksi</p>
+            </div>
+
+            <div class="card">
+                <h3>QRIS</h3>
+                <h2 id="reportQrisIncome">Rp0</h2>
+                <p id="reportQrisCount">0 transaksi</p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- TABEL LAPORAN -->
+    <div class="panel">
+        <h2>Rincian Laporan Transaksi</h2>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>No.</th>
+                        <th>ID Transaksi</th>
+                        <th>ID Pembayaran</th>
+                        <th>Tanggal</th>
+                        <th>Metode</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+
+                <tbody id="reportTable">
+                    <tr>
+                        <td colspan="7">Belum ada data laporan.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</section>
+
+    </main>
+
+    <!-- JENDELA POP-UP (untuk ubah barang & riwayat harga) -->
+    <div id="modal" class="modal" hidden>
+        <div class="modal-box">
+            <div class="modal-head">
+                <h2 id="modalTitle"></h2>
+                <button type="button" class="btn-reset modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
