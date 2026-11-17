@@ -49,3 +49,12 @@ plantuml -tsvg <file>.puml
 ```
 
 Untuk memeriksa sintaks saja: `plantuml -checkonly <file>.puml`. File `.svg` dan PDF tidak diperbarui otomatis, jadi buat ulang keduanya setelah dokumen berubah.
+
+## Nilai Kelompok
+
+|Kelompok         |P1|P2|P3|P4|P5|P6|P7|P8|P9|P10|
+|-----------------|--|--|--|--|--|--|--|--|--|---|   
+|Naga Hitam       |10|  |  |  |  |  |  |  |  |   |
+|Mawar Beracun    |10|  |  |  |  |  |  |  |  |   |
+|Penampungan Ummat|  |  |  |  |  |  |  |  |  |   |
+|Gas Pol          |10|  |  |  |  |  |  |  |  |   |
