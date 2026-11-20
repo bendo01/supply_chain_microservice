@@ -1,20 +1,23 @@
+
 const categoryService = require("../services/categoryService");
+const messages = require("../utils/messages");
+const validators = require("../utils/validators");
 
 // Menampilkan semua kategori
 async function getAll(req, res) {
     try {
         const categories = await categoryService.getAllCategories();
 
-        res.json({
-            message: "Data kategori berhasil diambil",
+        return res.status(200).json({
+            message: "Data kategori berhasil diambil.",
             data: categories
         });
 
     } catch (error) {
-        console.error(error);
+        console.error("Gagal mengambil data kategori:", error);
 
-        res.status(500).json({
-            message: "Gagal mengambil data kategori"
+        return res.status(500).json({
+            message: messages.SERVER_ERROR
         });
     }
 }
@@ -24,31 +27,35 @@ async function create(req, res) {
     try {
         const { name } = req.body;
 
-        if (!name || !name.trim()) {
+        const validationError =
+            validators.validateCategoryName(name);
+
+        if (validationError) {
             return res.status(400).json({
-                message: "Nama kategori wajib diisi"
+                message: validationError
             });
         }
 
-        const data = await categoryService.createCategory(name.trim());
+        const data = await categoryService.createCategory(
+            name.trim()
+        );
 
-        res.status(201).json({
-            message: "Kategori berhasil ditambahkan",
+        return res.status(201).json({
+            message: messages.CATEGORY.CREATED,
             data
         });
 
     } catch (error) {
-        console.error(error);
+        console.error("Gagal menambahkan kategori:", error);
 
-        if (error.code === "23505") {
+        if (error.code === "23505" || error.code === "P2002") {
             return res.status(409).json({
-                message: "Nama kategori sudah digunakan"
+                message: messages.CATEGORY.NAME_EXISTS
             });
         }
 
-        res.status(500).json({
-            message: "Gagal menambahkan kategori",
-            error: error.message
+        return res.status(500).json({
+            message: messages.SERVER_ERROR
         });
     }
 }
@@ -58,9 +65,22 @@ async function update(req, res) {
     try {
         const { name } = req.body;
 
-        if (!name || !name.trim()) {
+        // Validasi ID
+        const idError = validators.validateId(req.params.id);
+
+        if (idError) {
             return res.status(400).json({
-                message: "Nama kategori wajib diisi"
+                message: idError
+            });
+        }
+
+        // Validasi nama
+        const validationError =
+            validators.validateCategoryName(name);
+
+        if (validationError) {
+            return res.status(400).json({
+                message: validationError
             });
         }
 
@@ -71,27 +91,26 @@ async function update(req, res) {
 
         if (!data) {
             return res.status(404).json({
-                message: "Kategori tidak ditemukan"
+                message: messages.CATEGORY.NOT_FOUND
             });
         }
 
-        res.json({
-            message: "Kategori berhasil diperbarui",
+        return res.status(200).json({
+            message: messages.CATEGORY.UPDATED,
             data
         });
 
     } catch (error) {
-        console.error(error);
+        console.error("Gagal mengubah kategori:", error);
 
-        if (error.code === "23505") {
+        if (error.code === "23505" || error.code === "P2002") {
             return res.status(409).json({
-                message: "Nama kategori sudah digunakan"
+                message: messages.CATEGORY.NAME_EXISTS
             });
         }
 
-        res.status(500).json({
-            message: "Gagal mengubah kategori",
-            error: error.message
+        return res.status(500).json({
+            message: messages.SERVER_ERROR
         });
     }
 }
@@ -99,31 +118,41 @@ async function update(req, res) {
 // Menghapus kategori
 async function remove(req, res) {
     try {
-        const data = await categoryService.deleteCategory(req.params.id);
+        // Validasi ID
+        const idError = validators.validateId(req.params.id);
+
+        if (idError) {
+            return res.status(400).json({
+                message: idError
+            });
+        }
+
+        const data = await categoryService.deleteCategory(
+            req.params.id
+        );
 
         if (!data) {
             return res.status(404).json({
-                message: "Kategori tidak ditemukan"
+                message: messages.CATEGORY.NOT_FOUND
             });
         }
 
         if (data.used) {
             return res.status(409).json({
-                message: "Kategori tidak dapat dihapus karena masih digunakan oleh barang"
+                message: messages.CATEGORY.IN_USE
             });
         }
 
-        res.json({
-            message: "Kategori berhasil dihapus",
+        return res.status(200).json({
+            message: messages.CATEGORY.DELETED,
             data
         });
 
     } catch (error) {
-        console.error(error);
+        console.error("Gagal menghapus kategori:", error);
 
-        res.status(500).json({
-            message: "Gagal menghapus kategori",
-            error: error.message
+        return res.status(500).json({
+            message: messages.SERVER_ERROR
         });
     }
 }
