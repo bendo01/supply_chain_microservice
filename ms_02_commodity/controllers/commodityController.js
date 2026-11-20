@@ -1,4 +1,7 @@
+
 const commodityService = require("../services/commodityService");
+const messages = require("../utils/messages");
+const validators = require("../utils/validators");
 
 // Menampilkan semua barang
 async function getAll(req, res) {
@@ -8,14 +11,16 @@ async function getAll(req, res) {
             category_id: req.query.category_id
         });
 
-        res.json({
-            message: "Data barang berhasil diambil",
+        return res.status(200).json({
+            message: "Data barang berhasil diambil.",
             data
         });
+
     } catch (error) {
-        res.status(500).json({
-            message: "Gagal mengambil data barang",
-            error: error.message
+        console.error("Gagal mengambil data barang:", error);
+
+        return res.status(500).json({
+            message: messages.SERVER_ERROR
         });
     }
 }
@@ -23,19 +28,34 @@ async function getAll(req, res) {
 // Menampilkan barang berdasarkan ID
 async function getById(req, res) {
     try {
-        const data = await commodityService.getCommodityById(req.params.id);
+        const idError = validators.validateId(req.params.id);
 
-        if (!data) {
-            return res.status(404).json({
-                message: "Barang tidak ditemukan"
+        if (idError) {
+            return res.status(400).json({
+                message: idError
             });
         }
 
-        res.json(data);
+        const data = await commodityService.getCommodityById(
+            req.params.id
+        );
+
+        if (!data) {
+            return res.status(404).json({
+                message: messages.COMMODITY.NOT_FOUND
+            });
+        }
+
+        return res.status(200).json({
+            message: "Data barang berhasil ditemukan.",
+            data
+        });
+
     } catch (error) {
-        res.status(500).json({
-            message: "Gagal mengambil barang",
-            error: error.message
+        console.error("Gagal mengambil detail barang:", error);
+
+        return res.status(500).json({
+            message: messages.SERVER_ERROR
         });
     }
 }
@@ -53,44 +73,48 @@ async function create(req, res) {
             image_url
         } = req.body;
 
-        if (
-            !sku || !name || !category_id || !unit ||
-            cost_price === undefined || selling_price === undefined
-        ) {
-            return res.status(400).json({
-                message: "Semua data barang wajib diisi"
-            });
-        }
+        // Validasi seluruh data barang
+        const validationError =
+            validators.validateCommodity(req.body);
 
-        if (
-            Number(cost_price) < 0 ||
-            Number(selling_price) < 0 ||
-            !Number.isFinite(Number(cost_price)) ||
-            !Number.isFinite(Number(selling_price))
-        ) {
+        if (validationError) {
             return res.status(400).json({
-                message: "Harga harus berupa angka dan tidak boleh negatif"
+                message: validationError
             });
         }
 
         const data = await commodityService.createCommodity({
-            sku,
-            name,
+            sku: sku.trim(),
+            name: name.trim(),
             category_id,
-            unit,
-            cost_price,
-            selling_price,
-            image_url
+            unit: unit.trim(),
+            cost_price: Number(cost_price),
+            selling_price: Number(selling_price),
+            image_url: image_url?.trim() || null
         });
 
-        res.status(201).json({
-            message: "Barang berhasil ditambahkan",
+        return res.status(201).json({
+            message: messages.COMMODITY.CREATED,
             data
         });
+
     } catch (error) {
-        res.status(500).json({
-            message: "Gagal menambahkan barang",
-            error: error.message
+        console.error("Gagal menambahkan barang:", error);
+
+        if (error.code === "P2002" || error.code === "23505") {
+            return res.status(409).json({
+                message: "SKU barang sudah digunakan."
+            });
+        }
+
+        if (error.code === "P2003" || error.code === "23503") {
+            return res.status(400).json({
+                message: "Kategori tidak ditemukan atau relasi data tidak valid."
+            });
+        }
+
+        return res.status(500).json({
+            message: messages.SERVER_ERROR
         });
     }
 }
@@ -108,53 +132,77 @@ async function update(req, res) {
             image_url
         } = req.body;
 
-        if (
-            !sku || !name || !category_id || !unit ||
-            cost_price === undefined || selling_price === undefined
-        ) {
+        // Validasi ID
+        const idError = validators.validateId(req.params.id);
+
+        if (idError) {
             return res.status(400).json({
-                message: "Semua data barang wajib diisi"
+                message: idError
             });
         }
 
-        if (
-            !Number.isFinite(Number(cost_price)) ||
-            !Number.isFinite(Number(selling_price)) ||
-            Number(cost_price) < 0 ||
-            Number(selling_price) < 0
-        ) {
+        // Validasi seluruh data barang
+        const validationError =
+            validators.validateCommodity(req.body);
+
+        if (validationError) {
             return res.status(400).json({
-                message: "Harga harus berupa angka dan tidak boleh negatif"
+                message: validationError
+            });
+        }
+
+        // Pastikan data pengguna tersedia
+        if (!req.user || !req.user.id || !req.user.name) {
+            return res.status(401).json({
+                message: "Pengguna belum terautentikasi."
             });
         }
 
         const data = await commodityService.updateCommodity(
             req.params.id,
             {
-                sku,
-                name,
+                sku: sku.trim(),
+                name: name.trim(),
                 category_id,
-                unit,
-                cost_price,
-                selling_price,
-                image_url
+                unit: unit.trim(),
+                cost_price: Number(cost_price),
+                selling_price: Number(selling_price),
+                image_url: image_url?.trim() || null
+            },
+            {
+                id: req.user.id,
+                name: req.user.name
             }
         );
 
         if (!data) {
             return res.status(404).json({
-                message: "Barang tidak ditemukan atau sudah nonaktif"
+                message: messages.COMMODITY.NOT_FOUND
             });
         }
 
-        res.json({
-            message: "Barang berhasil diperbarui",
+        return res.status(200).json({
+            message: messages.COMMODITY.UPDATED,
             data
         });
+
     } catch (error) {
-        res.status(500).json({
-            message: "Gagal memperbarui barang",
-            error: error.message
+        console.error("Gagal mengubah barang:", error);
+
+        if (error.code === "P2002" || error.code === "23505") {
+            return res.status(409).json({
+                message: "SKU barang sudah digunakan."
+            });
+        }
+
+        if (error.code === "P2003" || error.code === "23503") {
+            return res.status(400).json({
+                message: "Kategori tidak ditemukan atau relasi data tidak valid."
+            });
+        }
+
+        return res.status(500).json({
+            message: messages.SERVER_ERROR
         });
     }
 }
@@ -162,24 +210,34 @@ async function update(req, res) {
 // Menonaktifkan barang
 async function deactivate(req, res) {
     try {
+        const idError = validators.validateId(req.params.id);
+
+        if (idError) {
+            return res.status(400).json({
+                message: idError
+            });
+        }
+
         const data = await commodityService.deactivateCommodity(
             req.params.id
         );
 
         if (!data) {
             return res.status(404).json({
-                message: "Barang tidak ditemukan atau sudah nonaktif"
+                message: messages.COMMODITY.NOT_FOUND
             });
         }
 
-        res.json({
-            message: "Barang berhasil dinonaktifkan",
+        return res.status(200).json({
+            message: "Barang berhasil dinonaktifkan.",
             data
         });
+
     } catch (error) {
-        res.status(500).json({
-            message: "Gagal menonaktifkan barang",
-            error: error.message
+        console.error("Gagal menonaktifkan barang:", error);
+
+        return res.status(500).json({
+            message: messages.SERVER_ERROR
         });
     }
 }
