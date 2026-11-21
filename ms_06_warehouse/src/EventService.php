@@ -350,6 +350,7 @@ final class EventService
              VALUES (?, ?, 0, 0, 0) ON DUPLICATE KEY UPDATE product_id = VALUES(product_id)'
         );
         $insert->execute([$warehouseId, $productId]);
+        // The upsert holds an InnoDB lock on this stock row for the surrounding transaction.
         $statement = $this->db->prepare(
             'SELECT warehouse_id, product_id, quantity, reserved, min_stock, updated_at
              FROM warehouse_stocks
