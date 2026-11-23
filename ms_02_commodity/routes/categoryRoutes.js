@@ -1,18 +1,37 @@
+
 const express = require("express");
 const router = express.Router();
 
 const categoryController = require("../controllers/categoryController");
 
-// Menampilkan kategori
+const {
+    validateUUIDParam,
+    validateCategoryBody
+} = require("../middleware/validation");
+
+// Menampilkan semua kategori
 router.get("/", categoryController.getAll);
 
 // Menambahkan kategori
-router.post("/", categoryController.create);
+router.post(
+    "/",
+    validateCategoryBody,
+    categoryController.create
+);
 
 // Mengubah kategori
-router.put("/:id", categoryController.update);
+router.put(
+    "/:id",
+    validateUUIDParam,
+    validateCategoryBody,
+    categoryController.update
+);
 
 // Menghapus kategori
-router.delete("/:id", categoryController.remove);
+router.delete(
+    "/:id",
+    validateUUIDParam,
+    categoryController.remove
+);
 
 module.exports = router;
