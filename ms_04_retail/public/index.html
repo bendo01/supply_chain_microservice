@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - ms-04 Retail</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav id="app-nav"></nav>
+  <div class="container">
+    <div class="row" style="align-items:end;">
+      <div><h1>Dashboard Retail</h1><div class="muted">Ringkasan penjualan, laba-rugi, analisis barang, dan peringatan stok.</div></div>
+    </div>
+
+    <div class="card mt">
+      <div class="row">
+        <div><label>Retail</label><select id="f-retail"></select></div>
+        <div><label>Dari Tanggal</label><input id="f-from" type="date"></div>
+        <div><label>Sampai Tanggal</label><input id="f-to" type="date"></div>
+        <div style="align-self:end; flex:0 0 auto;"><button onclick="loadDashboard()">Terapkan Filter</button></div>
+      </div>
+      <div id="dash-status" class="status"></div>
+    </div>
+
+    <div class="grid cards mt" id="stats-cards"></div>
+
+    <div class="grid" style="grid-template-columns:1.2fr 1fr; margin-top:16px;">
+      <div class="card">
+        <h3>Penjualan Harian (maks 30 hari)</h3>
+        <div class="scroll"><table><thead><tr><th>Tanggal</th><th>Transaksi</th><th>Omzet</th></tr></thead><tbody id="daily-body"></tbody></table></div>
+      </div>
+      <div class="card">
+        <h3>Peringatan Stok Menipis/Habis</h3>
+        <div class="scroll"><table><thead><tr><th>Retail</th><th>Barang</th><th>Qty</th><th>Min</th></tr></thead><tbody id="low-body"></tbody></table></div>
+      </div>
+    </div>
+
+    <div class="grid" style="grid-template-columns:1fr 1fr; margin-top:16px;">
+      <div class="card">
+        <h3>Analisis Barang Terjual</h3>
+        <div class="scroll"><table><thead><tr><th>Barang</th><th>Qty</th><th>Omzet</th><th>HPP</th><th>Laba</th></tr></thead><tbody id="items-body"></tbody></table></div>
+      </div>
+      <div class="card">
+        <h3>Perbandingan Laba-Rugi per Retail</h3>
+        <div class="scroll"><table><thead><tr><th>Retail</th><th>Transaksi</th><th>Omzet</th><th>HPP</th><th>Laba</th></tr></thead><tbody id="compare-body"></tbody></table></div>
+      </div>
+    </div>
+  </div>
+  <script src="app.js"></script>
+  <script>
+    const user = requireAuth();
+    renderNav('dashboard');
+
+    async function loadDashboard() {
+      try {
+        setStatus('dash-status', 'Memuat data dashboard...');
+        const retailId = qs('f-retail').value;
+        const from = qs('f-from').value ? qs('f-from').value + ' 00:00:00' : '';
+        const to = qs('f-to').value ? qs('f-to').value + ' 23:59:59' : '';
+        const q = new URLSearchParams();
+        if (retailId) q.set('retail_id', retailId);
+        if (from) q.set('from', from);
+        if (to) q.set('to', to);
+        const [overviewRes, itemsRes, compareRes] = await Promise.all([
+          api('/api/dashboard/overview?' + q.toString()),
+          api('/api/dashboard/items/analysis?' + q.toString()),
+          api('/api/dashboard/retails/compare?' + new URLSearchParams({ ...(from?{from}:{}) , ...(to?{to}:{}) }).toString())
+        ]);
+        const s = overviewRes.data.summary;
+        qs('stats-cards').innerHTML = [
+          ['Total Transaksi', s.transaction_count],
+          ['Omzet', fmtRp(s.revenue)],
+          ['HPP (COGS)', fmtRp(s.cogs)],
+          ['Laba Kotor', fmtRp(s.profit)],
+          ['Rata-rata Transaksi', fmtRp(s.average_transaction)],
+          ['Item Terjual', s.items_sold]
+        ].map(([k,v]) => `<div class="card"><div class="muted">${k}</div><div class="stat">${v}</div></div>`).join('');
+
+        qs('daily-body').innerHTML = (overviewRes.data.daily||[]).map(d => `<tr><td>${String(d.day).slice(0,10)}</td><td>${d.transactions}</td><td>${fmtRp(d.revenue)}</td></tr>`).join('') || '<tr><td colspan="3" class="muted">Belum ada data</td></tr>';
+        qs('low-body').innerHTML = (overviewRes.data.low_stocks||[]).map(x => `<tr><td>${x.retail_name}</td><td>${x.commodity_name}</td><td><span class="pill ${x.quantity<=0?'bad':'warn'}">${x.quantity}</span></td><td>${x.min_stock}</td></tr>`).join('') || '<tr><td colspan="4" class="muted">Tidak ada stok menipis</td></tr>';
+        qs('items-body').innerHTML = (itemsRes.data||[]).map(i => `<tr><td>${i.name}</td><td>${i.qty_sold}</td><td>${fmtRp(i.revenue)}</td><td>${fmtRp(i.cogs)}</td><td>${fmtRp(i.profit)}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">Belum ada penjualan</td></tr>';
+
+        let compare = compareRes.data || [];
+        if (user.role !== 'OWNER' && user.retail_id) compare = compare.filter(r => r.retail_id === user.retail_id);
+        qs('compare-body').innerHTML = compare.map(r => `<tr><td>${r.retail_name}</td><td>${r.transaction_count}</td><td>${fmtRp(r.revenue)}</td><td>${fmtRp(r.cogs)}</td><td>${fmtRp(r.profit)}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">Belum ada data</td></tr>';
+
+        setStatus('dash-status', 'Dashboard diperbarui.', true);
+      } catch (err) {
+        setStatus('dash-status', err.message, false);
+      }
+    }
+
+    (async () => {
+      await loadRetailOptions('f-retail', { includeAll: user.role === 'OWNER', allLabel: 'Semua Retail' });
+      if (user.role !== 'OWNER') qs('f-retail').disabled = true;
+      await loadDashboard();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stok Retail - ms-04 Retail</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav id="app-nav"></nav>
+  <div class="container">
+    <h1>Stok Retail</h1>
+    <div class="card">
+      <div class="row">
+        <div><label>Retail</label><select id="retailId"></select></div>
+        <div style="align-self:end; flex:0 0 auto;"><button onclick="loadStocks()">Muat Stok</button></div>
+      </div>
+    </div>
+
+    <div class="grid" style="grid-template-columns:1.4fr 1fr; margin-top:16px;">
+      <div class="card">
+        <h3>Daftar Stok</h3>
+        <div class="scroll"><table>
+          <thead><tr><th>Barang</th><th>Qty</th><th>Reserved</th><th>Tersedia</th><th>Min</th><th>Status</th><th>Harga</th></tr></thead>
+          <tbody id="stock-body"></tbody>
+        </table></div>
+      </div>
+      <div class="card">
+        <h3>Tambah / Atur Stok</h3>
+        <p class="muted">Gunakan untuk set stok awal, koreksi, atau pengaturan minimum stok per barang di retail.</p>
+        <label>Retail</label>
+        <select id="u-retail"></select>
+        <label>Barang</label>
+        <select id="u-commodity"></select>
+        <div class="row">
+          <div><label>Quantity (stok fisik)</label><input id="u-qty" type="number" min="0" placeholder="contoh: 50"></div>
+          <div><label>Min Stock</label><input id="u-min" type="number" min="0" placeholder="contoh: 10"></div>
+        </div>
+        <div class="actions mt"><button onclick="saveStock()">Simpan Stok</button></div>
+        <div id="stock-status" class="status"></div>
+      </div>
+    </div>
+  </div>
+  <script src="app.js"></script>
+  <script>
+    requireAuth();
+    renderNav('stok');
+    async function init() {
+      await loadRetailOptions('retailId');
+      await loadRetailOptions('u-retail');
+      await loadCommodityOptions('u-commodity');
+      qs('retailId').addEventListener('change', loadStocks);
+      await loadStocks();
+    }
+    async function loadStocks() {
+      try {
+        const rid = qs('retailId').value;
+        const { data } = await api('/api/stocks?retail_id=' + encodeURIComponent(rid));
+        qs('stock-body').innerHTML = (data||[]).map(s => {
+          const low = Number(s.quantity) <= Number(s.min_stock);
+          return `<tr>
+            <td><b>${s.commodity_name}</b><div class="muted">${s.sku}</div></td>
+            <td>${s.quantity}</td><td>${s.reserved}</td><td>${s.available}</td><td>${s.min_stock}</td>
+            <td><span class="pill ${low ? (s.quantity<=0?'bad':'warn') : 'ok'}">${low ? 'RESTOCK' : 'AMAN'}</span></td>
+            <td>${fmtRp(s.selling_price)}</td>
+          </tr>`;
+        }).join('') || '<tr><td colspan="7" class="muted">Belum ada data stok untuk retail ini</td></tr>';
+      } catch (err) { setStatus('stock-status', err.message, false); }
+    }
+    async function saveStock() {
+      try {
+        const payload = {
+          retail_id: qs('u-retail').value,
+          commodity_id: qs('u-commodity').value,
+          quantity: qs('u-qty').value === '' ? undefined : Number(qs('u-qty').value),
+          min_stock: qs('u-min').value === '' ? undefined : Number(qs('u-min').value)
+        };
+        if (payload.quantity === undefined && payload.min_stock === undefined) {
+          return setStatus('stock-status', 'Isi quantity dan/atau min stock.', false);
+        }
+        await api('/api/stocks', { method: 'POST', body: JSON.stringify(payload) });
+        setStatus('stock-status', 'Stok berhasil disimpan.', true);
+        if (qs('retailId').value === payload.retail_id) await loadStocks();
+      } catch (err) { setStatus('stock-status', err.message, false); }
+    }
+    init();
+  </script>
+</body>
+</html>
