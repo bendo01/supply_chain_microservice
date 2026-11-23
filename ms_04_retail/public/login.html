@@ -1,74 +1,53 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Kasir - Toko Retail</title>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #2c3e50; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .login-box { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.5); width: 300px; text-align: center; }
-        h2 { color: #333; margin-bottom: 20px; }
-        .form-group { margin-bottom: 15px; text-align: left; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
-        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        .password-input { display: flex; gap: 8px; }
-        .password-input input { flex: 1; min-width: 0; }
-        .password-input button { width: auto; margin-top: 0; padding: 0 12px; }
-        button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; margin-top: 10px; }
-        button:hover { background-color: #0056b3; }
-        #error-msg { color: red; font-size: 14px; margin-top: 10px; display: none; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - ms-04 Retail</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="login-box">
-        <h2>🔐 Login Kasir</h2>
-        <form onsubmit="prosesLogin(event)">
-            <div class="form-group">
-                <label>Username:</label>
-                <input type="text" id="username" placeholder="Masukkan username" required>
-            </div>
-            <div class="form-group">
-                <label>Password:</label>
-                <div class="password-input">
-                    <input type="password" id="password" placeholder="Masukkan password" required>
-                    <button type="button" id="toggle-password" aria-pressed="false" onclick="togglePassword()">Tampilkan</button>
-                </div>
-            </div>
-            <button type="submit">Masuk ke Kasir</button>
-            <p id="error-msg">Username atau Password salah!</p>
-        </form>
+  <div class="login-wrap">
+    <div class="card login-box">
+      <h2>Login Retail Service</h2>
+      <p class="muted">Demo akun: <b>kasir/123</b>, <b>manajer/123</b>, <b>owner/123</b></p>
+      <form id="login-form">
+        <label>Username</label>
+        <input id="username" required placeholder="kasir / manajer / owner">
+        <label>Password</label>
+        <div class="row" style="gap:8px; align-items:center;">
+          <input id="password" type="password" required placeholder="123" style="flex:1;">
+          <button type="button" class="secondary small" id="toggle-pass" style="width:auto;">Tampil</button>
+        </div>
+        <button type="submit" class="mt" style="width:100%;">Masuk</button>
+        <div id="login-status" class="status"></div>
+      </form>
     </div>
-
-    <script>
-        function togglePassword() {
-            const passwordInput = document.getElementById('password');
-            const toggleButton = document.getElementById('toggle-password');
-            const isVisible = passwordInput.type === 'text';
-
-            passwordInput.type = isVisible ? 'password' : 'text';
-            toggleButton.textContent = isVisible ? 'Tampilkan' : 'Sembunyikan';
-            toggleButton.setAttribute('aria-pressed', String(!isVisible));
-        }
-
-        function prosesLogin(event) {
-            event.preventDefault(); // Mencegah halaman refresh
-
-            // Ambil data yang diketik
-            const user = document.getElementById('username').value;
-            const pass = document.getElementById('password').value;
-
-            // Kita pakai akun tiruan dulu (karena backend temanmu belum ada fitur login)
-            // Username: kasir, Password: 123
-            if (user === 'kasir' && pass === '123') {
-                // Kalau benar, simpan status login dan pindah ke halaman kasir
-                localStorage.setItem('isLoggedIn', 'true');
-                alert('Login Berhasil! Selamat bekerja.');
-                window.location.href = 'kasir.html'; // Pindah halaman
-            } else {
-                // Kalau salah, munculkan pesan error
-                document.getElementById('error-msg').style.display = 'block';
-            }
-        }
-    </script>
+  </div>
+  <script src="app.js"></script>
+  <script>
+    if (getUser()) window.location.href = 'index.html';
+    qs('toggle-pass').onclick = () => {
+      const p = qs('password');
+      const show = p.type === 'password';
+      p.type = show ? 'text' : 'password';
+      qs('toggle-pass').textContent = show ? 'Sembunyi' : 'Tampil';
+    };
+    qs('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      setStatus('login-status', 'Memproses login...');
+      try {
+        const res = await api('/api/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ username: qs('username').value.trim(), password: qs('password').value })
+        });
+        localStorage.setItem('retail_user', JSON.stringify(res.user));
+        localStorage.setItem('isLoggedIn', 'true');
+        window.location.href = 'index.html';
+      } catch (err) {
+        setStatus('login-status', err.message, false);
+      }
+    });
+  </script>
 </body>
 </html>
