@@ -1,0 +1,180 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kasir POS - ms-04 Retail</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav id="app-nav"></nav>
+  <div class="container">
+    <h1>Kasir (Point of Sale)</h1>
+    <div class="grid" style="grid-template-columns:1fr 1fr;">
+      <div class="card">
+        <h3>Input Penjualan</h3>
+        <label>Retail</label>
+        <select id="retailId"></select>
+        <div class="row">
+          <div>
+            <label>Barang</label>
+            <select id="commodity"></select>
+          </div>
+          <div style="max-width:140px;">
+            <label>Qty</label>
+            <input id="qty" type="number" min="1" value="1">
+          </div>
+        </div>
+        <div class="muted mt" id="stock-info"></div>
+        <div class="actions mt">
+          <button onclick="addToCart()">Tambah ke Keranjang</button>
+          <button class="secondary" onclick="loadProducts()">Muat Ulang Stok</button>
+        </div>
+
+        <h3 class="mt">Keranjang</h3>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>Barang</th><th>Qty</th><th>Harga</th><th>Subtotal</th><th></th></tr></thead>
+            <tbody id="cart-body"></tbody>
+          </table>
+        </div>
+        <div class="row mt" style="align-items:center;">
+          <div><b>Total: <span id="cart-total">Rp 0</span></b></div>
+          <div>
+            <label>Metode Bayar</label>
+            <select id="payment-method"><option value="CASH">Tunai</option><option value="QRIS">QRIS (simulasi)</option></select>
+          </div>
+        </div>
+        <div class="actions mt">
+          <button onclick="checkout()">Proses Pembayaran</button>
+          <button class="secondary" onclick="clearCart()">Kosongkan</button>
+        </div>
+        <div id="pos-status" class="status"></div>
+      </div>
+
+      <div class="card">
+        <h3>Riwayat Transaksi Terbaru</h3>
+        <div class="actions"><button class="secondary small" onclick="loadSales()">Refresh</button></div>
+        <div class="scroll mt">
+          <table>
+            <thead><tr><th>Waktu</th><th>Retail</th><th>Total</th><th>Status</th><th>Aksi</th></tr></thead>
+            <tbody id="sales-body"></tbody>
+          </table>
+        </div>
+        <div id="sales-detail" class="mt muted"></div>
+      </div>
+    </div>
+  </div>
+  <script src="app.js"></script>
+  <script>
+    const user = requireAuth();
+    renderNav('kasir');
+    let stocks = [];
+    let cart = [];
+
+    async function init() {
+      await loadRetailOptions('retailId');
+      await loadProducts();
+      await loadSales();
+      qs('retailId').addEventListener('change', loadProducts);
+      qs('commodity').addEventListener('change', updateStockInfo);
+    }
+
+    async function loadProducts() {
+      const rid = qs('retailId').value;
+      const { data } = await api('/api/stocks?retail_id=' + encodeURIComponent(rid));
+      stocks = data || [];
+      const sel = qs('commodity');
+      sel.innerHTML = stocks.map(s => `<option value="${s.commodity_id}" data-price="${s.selling_price}" data-name="${s.commodity_name}" data-available="${s.available}">${s.commodity_name} (${s.sku}) - ${fmtRp(s.selling_price)} | tersedia: ${s.available}</option>`).join('') || '<option value="">Tidak ada stok terdaftar</option>';
+      updateStockInfo();
+    }
+
+    function updateStockInfo() {
+      const opt = qs('commodity').selectedOptions[0];
+      if (!opt || !opt.value) { qs('stock-info').textContent = ''; return; }
+      qs('stock-info').textContent = `Harga: ${fmtRp(opt.dataset.price)} | Tersedia: ${opt.dataset.available}`;
+    }
+
+    function addToCart() {
+      const opt = qs('commodity').selectedOptions[0];
+      if (!opt || !opt.value) return setStatus('pos-status', 'Pilih barang terlebih dahulu.', false);
+      const qty = parseInt(qs('qty').value, 10);
+      if (!qty || qty < 1) return setStatus('pos-status', 'Jumlah tidak valid.', false);
+      const id = opt.value;
+      const name = opt.dataset.name;
+      const price = Number(opt.dataset.price);
+      const available = Number(opt.dataset.available);
+      const existing = cart.find(i => i.commodity_id === id);
+      const inCart = existing ? existing.quantity : 0;
+      if (inCart + qty > available) return setStatus('pos-status', `Stok ${name} tidak cukup. Tersedia ${available}, di keranjang ${inCart}.`, false);
+      if (existing) existing.quantity += qty; else cart.push({ commodity_id: id, name, unit_price: price, quantity: qty });
+      renderCart();
+      setStatus('pos-status', `${name} ditambahkan ke keranjang.`, true);
+    }
+
+    function renderCart() {
+      let total = 0;
+      qs('cart-body').innerHTML = cart.map((i, idx) => {
+        const sub = i.unit_price * i.quantity; total += sub;
+        return `<tr><td>${i.name}</td><td>${i.quantity}</td><td>${fmtRp(i.unit_price)}</td><td>${fmtRp(sub)}</td><td><button class="small danger" onclick="removeItem(${idx})">Hapus</button></td></tr>`;
+      }).join('') || '<tr><td colspan="5" class="muted">Keranjang kosong</td></tr>';
+      qs('cart-total').textContent = fmtRp(total);
+    }
+    function removeItem(i){ cart.splice(i,1); renderCart(); }
+    function clearCart(){ cart = []; renderCart(); }
+
+    async function checkout() {
+      if (!cart.length) return setStatus('pos-status', 'Keranjang masih kosong.', false);
+      const payload = {
+        retail_id: qs('retailId').value,
+        cashier_name: user.name,
+        payment_method: qs('payment-method').value,
+        status: 'COMPLETED',
+        items: cart.map(i => ({ commodity_id: i.commodity_id, quantity: i.quantity }))
+      };
+      setStatus('pos-status', 'Memproses transaksi...');
+      try {
+        const res = await api('/api/sales', { method: 'POST', body: JSON.stringify(payload) });
+        let msg = `Transaksi berhasil! ID: ${res.data.id} | Total: ${fmtRp(res.data.total)}`;
+        if (res.warnings && res.warnings.length) msg += ' | Peringatan: ' + res.warnings.map(w => w.message + ` (${w.name}: ${w.quantity})`).join('; ');
+        setStatus('pos-status', msg, true);
+        cart = []; renderCart();
+        await loadProducts();
+        await loadSales();
+      } catch (err) {
+        setStatus('pos-status', err.message, false);
+      }
+    }
+
+    async function loadSales() {
+      try {
+        const rid = qs('retailId') ? qs('retailId').value : '';
+        const { data } = await api('/api/sales?limit=20' + (rid ? '&retail_id=' + encodeURIComponent(rid) : ''));
+        qs('sales-body').innerHTML = (data||[]).map(s => {
+          const pill = s.status === 'COMPLETED' ? 'ok' : s.status === 'CANCELLED' ? 'bad' : 'warn';
+          const cancelBtn = s.status !== 'CANCELLED' ? `<button class="small danger" onclick="cancelSale('${s.id}')">Batalkan</button>` : '';
+          return `<tr><td>${fmtDate(s.created_at)}</td><td>${s.retail_name||''}</td><td>${fmtRp(s.total)}</td><td><span class="pill ${pill}">${s.status}</span></td><td class="actions"><button class="small secondary" onclick="viewSale('${s.id}')">Detail</button>${cancelBtn}</td></tr>`;
+        }).join('') || '<tr><td colspan="5" class="muted">Belum ada transaksi</td></tr>';
+      } catch (err) { /* ignore */ }
+    }
+
+    async function viewSale(id) {
+      try {
+        const { data } = await api('/api/sales/' + id);
+        qs('sales-detail').innerHTML = `<div class="card"><b>Detail ${data.id}</b><div>Kasir: ${data.cashier_name||'-'} | Bayar: ${data.payment_method} | ${fmtDate(data.created_at)}</div><ul>${data.items.map(i=>`<li>${i.name} x ${i.quantity} @ ${fmtRp(i.unit_price)} = ${fmtRp(i.line_total)}</li>`).join('')}</ul></div>`;
+      } catch (err) { alert(err.message); }
+    }
+
+    async function cancelSale(id) {
+      if (!confirm('Batalkan transaksi ini? Stok akan disesuaikan.')) return;
+      try {
+        await api('/api/sales/' + id + '/cancel', { method: 'POST' });
+        await loadProducts(); await loadSales();
+        setStatus('pos-status', 'Transaksi dibatalkan.', true);
+      } catch (err) { setStatus('pos-status', err.message, false); }
+    }
+
+    init();
+  </script>
+</body>
+</html>

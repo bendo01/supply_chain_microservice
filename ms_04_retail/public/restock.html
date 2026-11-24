@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Permintaan Restock - ms-04 Retail</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav id="app-nav"></nav>
+  <div class="container">
+    <h1>Permintaan Restock</h1>
+    <div class="grid" style="grid-template-columns:1fr 1.3fr;">
+      <div class="card">
+        <h3>Buat Permintaan Restock</h3>
+        <label>Retail</label>
+        <select id="retailId"></select>
+        <label>Diminta oleh</label>
+        <input id="requestedBy" placeholder="Nama manajer">
+        <label>Catatan</label>
+        <textarea id="note" rows="2" placeholder="Opsional"></textarea>
+        <div class="row">
+          <div><label>Barang</label><select id="commodity"></select></div>
+          <div style="max-width:140px;"><label>Qty</label><input id="qty" type="number" min="1" value="10"></div>
+        </div>
+        <div class="actions mt">
+          <button onclick="addItem()">Tambah Item</button>
+        </div>
+        <h3 class="mt">Item Permintaan</h3>
+        <div class="scroll"><table><thead><tr><th>Barang</th><th>Qty</th><th></th></tr></thead><tbody id="req-items"></tbody></table></div>
+        <div class="actions mt"><button onclick="submitRequest()">Kirim Permintaan</button> <button class="secondary" onclick="clearItems()">Reset</button></div>
+        <div id="create-status" class="status"></div>
+      </div>
+
+      <div class="card">
+        <h3>Daftar Permintaan Restock</h3>
+        <div class="row">
+          <div><label>Filter Retail</label><select id="f-retail"></select></div>
+          <div><label>Filter Status</label>
+            <select id="f-status">
+              <option value="">Semua</option>
+              <option>REQUESTED</option><option>APPROVED</option><option>SHIPPED</option><option>RECEIVED</option><option>CANCELLED</option>
+            </select>
+          </div>
+          <div style="align-self:end; flex:0 0 auto;"><button class="secondary" onclick="loadRequests()">Refresh</button></div>
+        </div>
+        <div class="scroll mt"><table>
+          <thead><tr><th>Tanggal</th><th>Retail</th><th>Status</th><th>Item</th><th>Total Qty</th><th>Aksi</th></tr></thead>
+          <tbody id="req-body"></tbody>
+        </table></div>
+        <div id="detail" class="mt"></div>
+      </div>
+    </div>
+  </div>
+  <script src="app.js"></script>
+  <script>
+    const user = requireAuth(['OWNER','RETAIL_MANAGER']);
+    renderNav('restock');
+    let items = [];
+    let commodities = [];
+
+    async function init() {
+      await loadRetailOptions('retailId');
+      await loadRetailOptions('f-retail', { includeAll: user.role === 'OWNER', allLabel: 'Semua Retail' });
+      commodities = await loadCommodityOptions('commodity');
+      qs('requestedBy').value = user.name || '';
+      if (user.role !== 'OWNER') { qs('retailId').value = user.retail_id; qs('f-retail').value = user.retail_id; qs('f-retail').disabled = true; }
+      await loadRequests();
+    }
+
+    function addItem() {
+      const opt = qs('commodity').selectedOptions[0];
+      const qty = parseInt(qs('qty').value, 10);
+      if (!opt || !opt.value) return setStatus('create-status', 'Pilih barang.', false);
+      if (!qty || qty < 1) return setStatus('create-status', 'Qty tidak valid.', false);
+      const ex = items.find(i => i.commodity_id === opt.value);
+      if (ex) ex.quantity += qty; else items.push({ commodity_id: opt.value, name: opt.textContent.split(' - ')[0], quantity: qty });
+      renderItems();
+    }
+    function renderItems() {
+      qs('req-items').innerHTML = items.map((i, idx) => `<tr><td>${i.name}</td><td>${i.quantity}</td><td><button class="small danger" onclick="removeItem(${idx})">Hapus</button></td></tr>`).join('') || '<tr><td colspan="3" class="muted">Belum ada item</td></tr>';
+    }
+    function removeItem(i){ items.splice(i,1); renderItems(); }
+    function clearItems(){ items=[]; renderItems(); }
+
+    async function submitRequest() {
+      if (!items.length) return setStatus('create-status', 'Tambahkan minimal satu item.', false);
+      try {
+        await api('/api/restock-requests', { method:'POST', body: JSON.stringify({
+          retail_id: qs('retailId').value,
+          requested_by: qs('requestedBy').value || user.name,
+          note: qs('note').value,
+          items: items.map(i => ({ commodity_id: i.commodity_id, quantity: i.quantity }))
+        })});
+        setStatus('create-status', 'Permintaan restock berhasil dibuat.', true);
+        clearItems(); qs('note').value = '';
+        await loadRequests();
+      } catch (err) { setStatus('create-status', err.message, false); }
+    }
+
+    function statusPill(s) {
+      const cls = s==='RECEIVED'?'ok':(s==='CANCELLED'?'bad':'warn');
+      return `<span class="pill ${cls}">${s}</span>`;
+    }
+    function nextActions(id, status) {
+      const map = { REQUESTED:['APPROVED','CANCELLED'], APPROVED:['SHIPPED','CANCELLED'], SHIPPED:['RECEIVED','CANCELLED'], RECEIVED:[], CANCELLED:[] };
+      return (map[status]||[]).map(next => `<button class="small ${next==='RECEIVED'?'':'secondary'}" onclick="setStatusReq('${id}','${next}')">${next}</button>`).join(' ');
+    }
+
+    async function loadRequests() {
+      try {
+        const params = new URLSearchParams();
+        if (qs('f-retail').value) params.set('retail_id', qs('f-retail').value);
+        if (qs('f-status').value) params.set('status', qs('f-status').value);
+        const { data } = await api('/api/restock-requests?' + params.toString());
+        qs('req-body').innerHTML = (data||[]).map(r => `<tr>
+          <td>${fmtDate(r.created_at)}</td><td>${r.retail_name}</td><td>${statusPill(r.status)}</td>
+          <td>${r.item_count}</td><td>${r.total_quantity}</td>
+          <td class="actions"><button class="small secondary" onclick="viewReq('${r.id}')">Detail</button>${nextActions(r.id, r.status)}</td>
+        </tr>`).join('') || '<tr><td colspan="6" class="muted">Belum ada permintaan</td></tr>';
+      } catch (err) { setStatus('create-status', err.message, false); }
+    }
+
+    async function viewReq(id) {
+      const { data } = await api('/api/restock-requests/' + id);
+      qs('detail').innerHTML = `<div class="card"><b>Detail Restock ${data.id}</b>
+        <div class="muted">${data.retail_name} | Diminta oleh: ${data.requested_by||'-'} | ${fmtDate(data.created_at)}</div>
+        <div>Catatan: ${data.note || '-'}</div>
+        <ul>${data.items.map(i=>`<li>${i.name} (${i.sku}) - minta ${i.quantity}, diterima ${i.received_quantity}</li>`).join('')}</ul>
+        ${data.received_at ? `<div>Diterima: ${fmtDate(data.received_at)}</div>`:''}
+      </div>`;
+    }
+
+    async function setStatusReq(id, status) {
+      if (status === 'RECEIVED' && !confirm('Konfirmasi penerimaan barang? Stok retail akan bertambah sesuai permintaan.')) return;
+      try {
+        await api('/api/restock-requests/' + id + '/status', { method:'POST', body: JSON.stringify({ status }) });
+        await loadRequests();
+      } catch (err) { alert(err.message); }
+    }
+
+    renderItems();
+    init();
+  </script>
+</body>
+</html>
